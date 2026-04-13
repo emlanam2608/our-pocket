@@ -1,65 +1,105 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Home, BarChart2, List } from "lucide-react";
+import { startOfMonth, endOfMonth } from "date-fns";
+import { SummaryCards } from "@/components/dashboard/SummaryCards";
+import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
+import { TransactionList } from "@/components/transaction/TransactionList";
+import { TransactionForm } from "@/components/transaction/TransactionForm";
+import { MonthPicker } from "@/components/dashboard/MonthPicker";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useFCM } from "@/hooks/useFCM";
+
+export default function HomePage() {
+  useFCM(); // Init push notifications
+
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<"summary" | "transactions">("summary");
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const { transactions, loading } = useTransactions(monthStart, monthEnd);
+
+  const displayName =
+    typeof window !== "undefined"
+      ? localStorage.getItem("nhaminh-displayname") ?? "Nhà"
+      : "Nhà";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen max-w-lg mx-auto flex flex-col safe-top">
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="sticky top-0 z-30 glass safe-top px-4 pt-4 pb-3"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center">
+              <Home className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-bold text-base leading-none">Nhà Mình</p>
+              <p className="text-zinc-500 text-xs">Xin chào, {displayName} 👋</p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <MonthPicker month={currentMonth} onChange={setCurrentMonth} />
+
+        {/* Tabs */}
+        <div className="flex gap-1 mt-3 p-1 bg-white/5 rounded-xl">
+          {[
+            { id: "summary", label: "Tổng quan", icon: BarChart2 },
+            { id: "transactions", label: "Giao dịch", icon: List },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as "summary" | "transactions")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === tab.id
+                  ? "bg-purple-600/70 text-white shadow"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
         </div>
+      </motion.header>
+
+      {/* Content */}
+      <main className="flex-1 px-4 py-4 pb-28 space-y-4">
+        {activeTab === "summary" ? (
+          <motion.div
+            key="summary"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
+            <SummaryCards transactions={transactions} loading={loading} />
+            <ExpenseChart transactions={transactions} loading={loading} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="transactions"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <TransactionList transactions={transactions} loading={loading} />
+          </motion.div>
+        )}
       </main>
+
+      {/* Floating Action Button via TransactionForm */}
+      <TransactionForm />
     </div>
   );
 }

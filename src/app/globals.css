@@ -1,26 +1,113 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+/* Design tokens via Tailwind v4 @theme */
+@theme {
+  --color-background: hsl(240 10% 3.9%);
+  --color-foreground: hsl(0 0% 98%);
+  --color-card: hsl(240 10% 7%);
+  --color-card-foreground: hsl(0 0% 98%);
+  --color-primary: hsl(262 83% 68%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  --color-secondary: hsl(240 4% 16%);
+  --color-secondary-foreground: hsl(0 0% 98%);
+  --color-muted: hsl(240 4% 16%);
+  --color-muted-foreground: hsl(240 5% 64.9%);
+  --color-accent: hsl(262 83% 58%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-border: hsl(240 4% 18%);
+  --color-input: hsl(240 4% 18%);
+  --color-ring: hsl(262 83% 68%);
+  --color-popover: hsl(240 10% 7%);
+  --color-popover-foreground: hsl(0 0% 98%);
+  --color-income: hsl(142 76% 36%);
+  --color-expense: hsl(0 84% 60%);
+  --radius: 0.75rem;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+/* Shadcn CSS variables (used by shadcn component classes) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 262 83% 68%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 262 83% 58%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 4% 18%;
+  --input: 240 4% 18%;
+  --ring: 262 83% 68%;
+  --radius: 0.75rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
+  border-color: hsl(var(--border));
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Inter", system-ui, sans-serif;
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Glass card ── */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Gradient mesh background ── */
+.mesh-bg {
+  background-color: hsl(240 10% 3.9%);
+  background-image:
+    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(16, 185, 129, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 100px; }
+
+/* ── Number input spin removal ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* ── PWA safe areas ── */
+.safe-top  { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
 }

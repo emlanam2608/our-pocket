@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nhà Mình - Expense Management PWA 🏠💸
 
-## Getting Started
+A simple, private, and beautiful expense management web application built for couples to track their shared finances seamlessly.
 
-First, run the development server:
+![Nhà Mình Preview](https://github.com/emlanam2608/our-pocket/raw/main/public/icons/icon-512.png)
 
+## 🚀 Built With
+- **Next.js 16 (App Router)**: Fast, server-side rendered, and modern.
+- **Firebase**: Firestore for real-time data, Authentication (Anonymous) for security.
+- **Tailwind CSS v4**: Ultra-modern styling with glassmorphism and custom animations.
+- **Serwist**: Robust PWA support with advanced caching and push notifications.
+- **Framer Motion**: Smooth page transitions and interactive micro-animations.
+- **Shadcn UI & Recharts**: Beautiful components and insightful data visualization.
+
+## ✨ Key Features
+- **Password Gate**: Private access secured by a global password.
+- **Real-time Sync**: Transactions shared instantly between devices.
+- **Mobile-First Design**: Optimized for "Add to Home Screen" experience.
+- **Push Notifications**: Get notified instantly when your partner adds a transaction.
+- **Detailed Insights**: Pie charts and group history for clear spending analysis.
+- **Offline Support**: Access your data even without an active internet connection.
+
+## 🛠️ Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Firebase Project
+- Vercel Account (recommended for deployment)
+
+### 1. Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/emlanam2608/our-pocket.git
+cd our-pocket
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Setup
+Create a `.env.local` file in the root and fill in the following:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+GLOBAL_PASSWORD="your_secret_password"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+NEXT_PUBLIC_FIREBASE_API_KEY="your_api_key"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your_auth_domain"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="your_project_id"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your_storage_bucket"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your_sender_id"
+NEXT_PUBLIC_FIREBASE_APP_ID="your_app_id"
+NEXT_PUBLIC_FIREBASE_VAPID_KEY="your_vapid_key"
+```
 
-## Learn More
+### 3. Run Locally
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📦 Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Frontend (Vercel)
+Connect your repository to Vercel and ensure all environment variables are added to the project settings.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Background Logic (Firebase Functions)
+Ensure the Cloud Functions are deployed to handle cross-device notifications:
+```bash
+firebase deploy --only functions
+```
 
-## Deploy on Vercel
+## 📝 License
+This project is private and for personal use.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+Built with ❤️ for **Nhà Mình**.

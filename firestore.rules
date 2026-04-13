@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Transactions: any anonymous authenticated user can read/write
+    match /transactions/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['type','categoryId','amount','createdBy','timestamp'])
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.type in ['income','expense'];
+      // No updates or deletes from client
+      allow update, delete: if false;
+    }
+
+    // FCM tokens: any authed user can write their own token
+    match /fcmTokens/{token} {
+      allow read: if false; // only Cloud Functions read these
+      allow write: if request.auth != null;
+    }
+  }
+}

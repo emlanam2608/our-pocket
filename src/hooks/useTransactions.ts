@@ -22,8 +22,10 @@ const PAGE_SIZE = 30;
 export function useTransactions(monthStart?: Date, monthEnd?: Date) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    setError(null);
     const constraints: Parameters<typeof query>[1][] = [orderBy("timestamp", "desc")];
 
     if (monthStart && monthEnd) {
@@ -46,16 +48,17 @@ export function useTransactions(monthStart?: Date, monthEnd?: Date) {
         setTransactions(docs);
         setLoading(false);
       },
-      (error) => {
-        console.error("Firestore subscription error:", error);
-        setLoading(false); // Stop loading even if it fails
+      (err) => {
+        console.error("Firestore subscription error:", err);
+        setError(err);
+        setLoading(false);
       }
     );
 
     return unsub;
   }, [monthStart, monthEnd]);
 
-  return { transactions, loading };
+  return { transactions, loading, error };
 }
 
 export async function addTransaction(

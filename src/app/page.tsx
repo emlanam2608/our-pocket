@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, BarChart2, List, Bell, BellOff } from "lucide-react";
+import { Home, BarChart2, List, Bell, ShieldAlert } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
@@ -31,7 +31,7 @@ export default function HomePage() {
     };
   }, [currentMonth]);
 
-  const { transactions, loading } = useTransactions(dateRange.start, dateRange.end);
+  const { transactions, loading, error } = useTransactions(dateRange.start, dateRange.end);
 
   const displayName = mounted
     ? localStorage.getItem("nhaminh-displayname") ?? "Nhà"
@@ -86,7 +86,7 @@ export default function HomePage() {
               onClick={() => setActiveTab(tab.id as "summary" | "transactions")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                   ? "bg-purple-600/70 text-white shadow"
+                  ? "bg-purple-600/70 text-white shadow"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
@@ -99,6 +99,29 @@ export default function HomePage() {
 
       {/* Content */}
       <main className="flex-1 px-4 py-4 pb-28 space-y-4">
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-4 py-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-300 text-sm overflow-hidden"
+            >
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <div className="flex-1">
+                <p className="font-bold">Lỗi kết nối dữ liệu</p>
+                <p className="text-xs opacity-70 leading-tight">
+                  {error.message.includes("permission-denied") 
+                    ? "Bạn chưa có quyền truy cập. Hãy bật 'Anonymous Auth' trong Firebase."
+                    : error.message.includes("index") 
+                    ? "Cần tạo chỉ mục Firestore. Hãy mở trang web trên máy tính để xem link tạo."
+                    : error.message}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {activeTab === "summary" ? (
           <motion.div
             key="summary"

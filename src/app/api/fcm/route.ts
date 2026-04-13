@@ -1,20 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase/client";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { NextResponse } from "next/server";
+import { adminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const { token } = await req.json();
-    if (!token) return NextResponse.json({ error: "No token" }, { status: 400 });
 
-    await setDoc(doc(db, "fcmTokens", token), {
+    if (!token) {
+      return NextResponse.json({ error: "No token" }, { status: 400 });
+    }
+
+    // Use adminDb to bypass security rules on the server
+    await adminDb.collection("fcmTokens").doc(token).set({
       token,
-      updatedAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({ success: true });
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    console.error("FCM API error:", err);
     return NextResponse.json({ error: "Failed to save token" }, { status: 500 });
   }
 }

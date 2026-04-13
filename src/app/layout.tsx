@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { FirebaseAuthProvider } from "@/components/providers/FirebaseAuthProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -34,7 +35,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`${inter.variable} h-full antialiased dark`}>
-      <body className="min-h-full mesh-bg text-foreground">{children}</body>
+      <body className="min-h-full mesh-bg text-foreground">
+        <FirebaseAuthProvider>{children}</FirebaseAuthProvider>
+      </body>
     </html>
   );
 }

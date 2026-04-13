@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Home, BarChart2, List } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Home, BarChart2, List, Bell, BellOff } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
@@ -13,7 +13,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useFCM } from "@/hooks/useFCM";
 
 export default function HomePage() {
-  useFCM(); // Init push notifications
+  const { permission, requestPermission } = useFCM();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeTab, setActiveTab] = useState<"summary" | "transactions">("summary");
@@ -55,6 +55,22 @@ export default function HomePage() {
               <p className="text-zinc-500 text-xs">Xin chào, {displayName} 👋</p>
             </div>
           </div>
+
+          <AnimatePresence>
+            {mounted && permission === "default" && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={requestPermission}
+                className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-full text-purple-300 text-xs font-semibold transition-colors"
+                title="Bật thông báo"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                Bật thông báo
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
 
         <MonthPicker month={currentMonth} onChange={setCurrentMonth} />
@@ -70,7 +86,7 @@ export default function HomePage() {
               onClick={() => setActiveTab(tab.id as "summary" | "transactions")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                  ? "bg-purple-600/70 text-white shadow"
+                   ? "bg-purple-600/70 text-white shadow"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
@@ -108,7 +124,6 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Floating Action Button via TransactionForm */}
       <TransactionForm />
     </div>
   );

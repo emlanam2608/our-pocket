@@ -35,15 +35,22 @@ export function useTransactions(monthStart?: Date, monthEnd?: Date) {
 
     const q = query(collection(db, "transactions"), ...constraints, limit(PAGE_SIZE));
 
-    const unsub = onSnapshot(q, (snap) => {
-      const docs: Transaction[] = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Transaction, "id" | "timestamp">),
-        timestamp: (d.data().timestamp as Timestamp).toDate(),
-      }));
-      setTransactions(docs);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const docs: Transaction[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Transaction, "id" | "timestamp">),
+          timestamp: (d.data().timestamp as any).toDate(),
+        }));
+        setTransactions(docs);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firestore subscription error:", error);
+        setLoading(false); // Stop loading even if it fails
+      }
+    );
 
     return unsub;
   }, [monthStart, monthEnd]);

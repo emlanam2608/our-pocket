@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Home, BarChart2, List } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
@@ -17,15 +17,25 @@ export default function HomePage() {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeTab, setActiveTab] = useState<"summary" | "transactions">("summary");
+  const [mounted, setMounted] = useState(false);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const { transactions, loading } = useTransactions(monthStart, monthEnd);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const displayName =
-    typeof window !== "undefined"
-      ? localStorage.getItem("nhaminh-displayname") ?? "Nhà"
-      : "Nhà";
+  // Memoize date ranges to prevent infinite re-renders in useTransactions
+  const dateRange = useMemo(() => {
+    return {
+      start: startOfMonth(currentMonth),
+      end: endOfMonth(currentMonth),
+    };
+  }, [currentMonth]);
+
+  const { transactions, loading } = useTransactions(dateRange.start, dateRange.end);
+
+  const displayName = mounted
+    ? localStorage.getItem("nhaminh-displayname") ?? "Nhà"
+    : "Nhà";
 
   return (
     <div className="min-h-screen max-w-lg mx-auto flex flex-col safe-top">

@@ -7,7 +7,22 @@ export async function POST(req: Request) {
     const { token, userAgent, deviceType, language, displayName } = await req.json();
     if (!token) return NextResponse.json({ error: "No token" }, { status: 400 });
 
-    // Use adminDb to bypass security rules on the server
+    // Deduplication: Remove old tokens for the same user + device fingerprint
+    const sameUserTokens = await adminDb.collection("fcmTokens")
+      .where("displayName", "==", displayName || "Nhà")
+      .get();
+
+    const deleteBatch = adminDb.batch();
+    sameUserTokens.docs.forEach((doc) => {
+      const data = doc.data();
+      // If it's the same device (UA) but a different token, delete it
+      if (doc.id !== token && data.userAgent === userAgent) {
+        deleteBatch.delete(doc.ref);
+      }
+    });
+    await deleteBatch.commit();
+
+    // Save the new token
     await adminDb.collection("fcmTokens").doc(token).set({
       token,
       deviceType: deviceType || "Unknown",

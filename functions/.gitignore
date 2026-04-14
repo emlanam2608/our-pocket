@@ -1,0 +1,6 @@
+# Firebase Cloud Functions excluded files
+node_modules/
+lib/
+*.log
+firebase-debug.log*
+.runtimeconfig.json

@@ -1,103 +1,86 @@
-import * as functions from "firebase-functions/v2";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-const db = admin.firestore();
-const messaging = admin.messaging();
-
-function formatVND(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 /**
- * Triggered when a new transaction document is created.
- * Sends a push notification to ALL registered FCM tokens
- * EXCEPT the device that created the transaction.
+ * Triggered when a new transaction is created.
+ * Sends a notification to all registered tokens EXCEPT the sender.
+ * 
+ * Region: asia-southeast1 (Singapore)
  */
-export const onTransactionCreated = functions.firestore.onDocumentCreated(
-  "transactions/{docId}",
-  async (event) => {
-    const data = event.data?.data();
-    if (!data) return;
+export const ontransactioncreated = onDocumentCreated({
+  document: "transactions/{transactionId}",
+  region: "asia-southeast1",
+  memory: "256MiB",
+}, async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
 
-    const { createdBy, amount, description, categoryId, senderToken } = data as {
-      createdBy: string;
-      amount: number;
-      description?: string;
-      categoryId?: string;
-      senderToken?: string;
-    };
+  const data = snapshot.data();
+  if (!data) return;
 
-    // Fetch all FCM tokens
-    const tokensSnap = await db.collection("fcmTokens").get();
-    if (tokensSnap.empty) return;
+  const senderToken = data.senderToken;
+  const amount = data.amount || 0;
+  const createdBy = data.createdBy || "Ai đó";
+  const description = data.description || "Không có mô tả";
 
-    // Exclude the sender's token
-    const tokens: string[] = tokensSnap.docs
-      .map((d) => d.data().token as string)
-      .filter((t) => t && t !== senderToken);
+  console.log("New v2 transaction detected in Singapore:", event.params.transactionId);
 
-    if (tokens.length === 0) return;
+  try {
+    // 1. Get all registered tokens
+    const tokensSnap = await admin.firestore().collection("fcmTokens").get();
+    const tokens = tokensSnap.docs
+      .map((doc) => doc.id)
+      .filter((token) => token !== senderToken); // Don't notify the sender
 
-    const notifTitle = "Nhà Mình 🏠";
-    const amountStr = formatVND(amount);
-    const label = description || categoryId || "Giao dịch mới";
-    const notifBody = `${createdBy} vừa nhập: ${amountStr} - ${label}`;
-
-    // Send multicast (max 500 tokens per batch per FCM spec)
-    const BATCH_SIZE = 500;
-    for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
-      const batch = tokens.slice(i, i + BATCH_SIZE);
-      const response = await messaging.sendEachForMulticast({
-        tokens: batch,
-        notification: {
-          title: notifTitle,
-          body: notifBody,
-        },
-        android: {
-          notification: { icon: "ic_stat_nhaminh", sound: "default" },
-          priority: "high",
-        },
-        apns: {
-          payload: {
-            aps: { sound: "default", badge: 1 },
-          },
-        },
-        webpush: {
-          notification: {
-            title: notifTitle,
-            body: notifBody,
-            icon: "/icons/icon-192.png",
-            badge: "/icons/icon-192.png",
-            vibrate: [200, 100, 200],
-          },
-          fcmOptions: { link: "/" },
-        },
-      });
-
-      // Clean up invalid tokens
-      const invalidIndexes: number[] = [];
-      response.responses.forEach((r, idx) => {
-        if (!r.success && r.error?.code === "messaging/registration-token-not-registered") {
-          invalidIndexes.push(idx);
-        }
-      });
-
-      if (invalidIndexes.length > 0) {
-        const batch2 = db.batch();
-        invalidIndexes.forEach((idx) => {
-          const token = batch[idx];
-          batch2.delete(db.collection("fcmTokens").doc(token));
-        });
-        await batch2.commit();
-      }
+    if (tokens.length === 0) {
+      console.log("No recipient tokens found.");
+      return;
     }
 
-    functions.logger.info(`Notification sent to ${tokens.length} device(s): "${notifBody}"`);
+    // 2. Define the notification using the modern Multicast API
+    const message: admin.messaging.MulticastMessage = {
+      tokens: tokens,
+      notification: {
+        title: "Chi tiêu mới! 💸",
+        body: `${createdBy} vừa nhập ${amount.toLocaleString("vi-VN")}đ - ${description}`,
+      },
+      data: {
+        transactionId: event.params.transactionId,
+        amount: String(amount),
+      },
+      webpush: {
+        notification: {
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+        },
+        fcmOptions: {
+          link: "https://our-pocket-eta.vercel.app/",
+        },
+      },
+    };
+
+    // 3. Send notifications
+    const response = await admin.messaging().sendEachForMulticast(message);
+    console.log(`Successfully sent ${response.successCount} notifications.`);
+
+    // 4. Cleanup old/invalid tokens
+    const tasks: Promise<any>[] = [];
+    response.responses.forEach((resp, index) => {
+      if (!resp.success && resp.error) {
+        console.error("Failure sending notification to", tokens[index], resp.error);
+        if (
+          resp.error.code === "messaging/invalid-registration-token" ||
+          resp.error.code === "messaging/registration-token-not-registered"
+        ) {
+          tasks.push(admin.firestore().collection("fcmTokens").doc(tokens[index]).delete());
+        }
+      }
+    });
+
+    await Promise.all(tasks);
+  } catch (error) {
+    console.error("Error sending notifications:", error);
   }
-);
+});

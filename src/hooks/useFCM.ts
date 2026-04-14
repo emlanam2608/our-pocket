@@ -40,7 +40,7 @@ export function useFCM() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
           });
-          console.log("FCM Token registered:", token);
+          console.log("FCM Token registered");
         }
       }
     } catch (err) {

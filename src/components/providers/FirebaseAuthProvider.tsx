@@ -17,7 +17,7 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
           console.error("Firebase Anonymous Auth Error:", error);
         }
       } else {
-        console.log("Firebase Auth established:", user.uid);
+        // Auth established
       }
       setInitializing(false);
     });

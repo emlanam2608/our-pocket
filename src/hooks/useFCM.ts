@@ -35,12 +35,28 @@ export function useFCM() {
 
         if (token) {
           sessionStorage.setItem("fcm-token", token);
+          
+          const ua = navigator.userAgent;
+          let deviceType = "Desktop";
+          if (/iPhone|iPad|iPod/.test(ua)) deviceType = "iOS Device";
+          else if (/Android/.test(ua)) deviceType = "Android Device";
+          else if (/Macintosh/.test(ua)) deviceType = "Mac";
+          else if (/Windows/.test(ua)) deviceType = "Windows PC";
+
+          const deviceInfo = {
+            token,
+            deviceType,
+            userAgent: ua,
+            language: navigator.language,
+            displayName: localStorage.getItem("nhaminh-displayname") ?? "Nhà",
+          };
+
           await fetch("/api/fcm", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify(deviceInfo),
           });
-          console.log("FCM Token registered");
+          console.log(`FCM Token registered for ${deviceType}:`, deviceInfo);
         }
       }
     } catch (err) {

@@ -29,9 +29,36 @@ export default function HomePage() {
     if (savedName) setDisplayName(savedName);
   }, []);
 
-  const handleNameUpdate = (newName: string) => {
+  const handleNameUpdate = async (newName: string) => {
     setDisplayName(newName);
     localStorage.setItem("nhaminh-displayname", newName);
+
+    // Sync FCM token if exists
+    const token = sessionStorage.getItem("fcm-token");
+    if (token) {
+      try {
+        const ua = navigator.userAgent;
+        let deviceType = "Desktop";
+        if (/iPhone|iPad|iPod/.test(ua)) deviceType = "iOS Device";
+        else if (/Android/.test(ua)) deviceType = "Android Device";
+        else if (/Macintosh/.test(ua)) deviceType = "Mac";
+        else if (/Windows/.test(ua)) deviceType = "Windows PC";
+
+        await fetch("/api/fcm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            deviceType,
+            userAgent: ua,
+            language: navigator.language,
+            displayName: newName,
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to sync FCM token after name update:", err);
+      }
+    }
   };
 
   const dateRange = useMemo(() => {

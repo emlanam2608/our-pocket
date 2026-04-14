@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, BarChart2, List, Bell, ShieldAlert } from "lucide-react";
+import { BarChart2, List, Bell, ShieldAlert } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
@@ -11,6 +11,7 @@ import { TransactionForm } from "@/components/transaction/TransactionForm";
 import { MonthPicker } from "@/components/dashboard/MonthPicker";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useFCM } from "@/hooks/useFCM";
+import { ProfileSettings } from "@/components/profile/ProfileSettings";
 import type { Transaction } from "@/lib/constants";
 
 export default function HomePage() {
@@ -20,10 +21,18 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<"summary" | "transactions">("summary");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [displayName, setDisplayName] = useState("Nhà");
 
   useEffect(() => {
     setMounted(true);
+    const savedName = localStorage.getItem("nhaminh-displayname");
+    if (savedName) setDisplayName(savedName);
   }, []);
+
+  const handleNameUpdate = (newName: string) => {
+    setDisplayName(newName);
+    localStorage.setItem("nhaminh-displayname", newName);
+  };
 
   const dateRange = useMemo(() => {
     return {
@@ -33,10 +42,6 @@ export default function HomePage() {
   }, [currentMonth]);
 
   const { transactions, loading, error } = useTransactions(dateRange.start, dateRange.end);
-
-  const displayName = mounted
-    ? localStorage.getItem("nhaminh-displayname") ?? "Nhà"
-    : "Nhà";
 
   return (
     <div className="min-h-screen max-w-lg mx-auto flex flex-col safe-top pb-24">
@@ -65,15 +70,17 @@ export default function HomePage() {
         </AnimatePresence>
 
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center">
-              <Home className="w-4 h-4 text-white" />
+          {mounted ? (
+            <ProfileSettings currentName={displayName} onUpdate={handleNameUpdate} />
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-violet-500/20 animate-pulse" />
+              <div className="space-y-1">
+                <div className="w-16 h-4 bg-white/5 rounded animate-pulse" />
+                <div className="w-24 h-3 bg-white/5 rounded animate-pulse" />
+              </div>
             </div>
-            <div>
-              <p className="text-white font-bold text-base leading-none">Nhà Mình</p>
-              <p className="text-zinc-500 text-xs">Xin chào, {displayName} 👋</p>
-            </div>
-          </div>
+          )}
 
           <AnimatePresence>
             {mounted && permission === "default" && (

@@ -23,7 +23,7 @@ export const onTransactionCreated = onDocumentCreated({
   const senderToken = data.senderToken;
   const amount = data.amount || 0;
   const createdBy = data.createdBy || "Ai đó";
-  const description = data.description || "Không có mô tả";
+  const description = data.description || "";
 
   console.log(`New v2 transaction detected: ${event.params.transactionId} by ${createdBy}`);
 
@@ -41,11 +41,15 @@ export const onTransactionCreated = onDocumentCreated({
     }
 
     // 2. Define the notification using the modern Multicast API
+    const body = description 
+      ? `${createdBy} vừa nhập ${amount.toLocaleString("vi-VN")}đ - ${description}`
+      : `${createdBy} vừa nhập ${amount.toLocaleString("vi-VN")}đ`;
+
     const message: admin.messaging.MulticastMessage = {
       tokens: tokens,
       notification: {
         title: "Chi tiêu mới! 💸",
-        body: `${createdBy} vừa nhập ${amount.toLocaleString("vi-VN")}đ - ${description}`,
+        body: body,
       },
       data: {
         transactionId: event.params.transactionId,

@@ -9,9 +9,9 @@ admin.initializeApp();
  * 
  * Region: asia-southeast1 (Singapore)
  */
-export const ontransactioncreated = onDocumentCreated({
+export const onTransactionCreated = onDocumentCreated({
   document: "transactions/{transactionId}",
-  region: "asia-southeast1",
+  region: "us-central1",
   memory: "256MiB",
 }, async (event) => {
   const snapshot = event.data;
@@ -25,7 +25,7 @@ export const ontransactioncreated = onDocumentCreated({
   const createdBy = data.createdBy || "Ai đó";
   const description = data.description || "Không có mô tả";
 
-  console.log("New v2 transaction detected in Singapore:", event.params.transactionId);
+  console.log(`New v2 transaction detected: ${event.params.transactionId} by ${createdBy}`);
 
   try {
     // 1. Get all registered tokens
@@ -34,8 +34,9 @@ export const ontransactioncreated = onDocumentCreated({
       .map((doc) => doc.id)
       .filter((token) => token !== senderToken); // Don't notify the sender
 
+    console.log(`Found ${tokensSnap.docs.length} total tokens. Sending to ${tokens.length} recipients (sender filtered: ${!!senderToken}).`);
+
     if (tokens.length === 0) {
-      console.log("No recipient tokens found.");
       return;
     }
 

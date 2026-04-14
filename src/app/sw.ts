@@ -22,48 +22,67 @@ const serwist = new Serwist({
 
 serwist.addEventListeners();
 
-// --- Firebase Messaging Setup (Push Notifications) ---
+// --- Firebase Messaging Setup ---
 
-// Use environment variables for Firebase config
-// In SW, process.env might not be defined if not shimmed by the bundler
-const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
-
-const firebaseConfig = {
-  apiKey: env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: env.NEXT_PUBLIC_FIREBASE_APP_ID,
+// Hardcoded check for build-time replacement
+const FIREBASE_CONFIG = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Only initialize if we have a sender ID and it's not a placeholder
-if (firebaseConfig.messagingSenderId && !firebaseConfig.messagingSenderId.includes("11111")) {
+if (FIREBASE_CONFIG.messagingSenderId) {
   try {
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(FIREBASE_CONFIG);
     const messaging = getMessaging(app);
 
     onBackgroundMessage(messaging, (payload) => {
-      console.log("[sw.ts] Background message received", payload);
-      const { title, body, icon } = payload.notification || {};
-
-      self.registration.showNotification(title || "Nhà Mình 🏠", {
-        body: body || "",
-        icon: icon || "/icons/icon-192.png",
+      console.log("[sw.ts] Received background message", payload);
+      const notificationTitle = payload.notification?.title || "Chi tiêu mới! 🏠";
+      const notificationOptions = {
+        body: payload.notification?.body || "Gia đình mình vừa có chi tiêu mới.",
+        icon: "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
-        // @ts-ignore
-        vibrate: [200, 100, 200],
         tag: "nhaminh-transaction",
-        renotify: true,
         data: payload.data,
-      });
+      };
+
+      return self.registration.showNotification(notificationTitle, notificationOptions);
     });
   } catch (err) {
-    console.error("[sw.ts] Failed to initialize Firebase Messaging:", err);
+    console.error("[sw.ts] Firebase Messaging init error", err);
   }
 }
 
-// Notification click – open/focus the app
+// Fallback: Listen to raw push events (very reliable for iOS)
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = event.data.json();
+    console.log("[sw.ts] Raw push received", data);
+    
+    // If the notification isn't already handled by onBackgroundMessage
+    if (data.notification) {
+      const { title, body } = data.notification;
+      event.waitUntil(
+        self.registration.showNotification(title || "Nhà Mình 🏠", {
+          body: body || "",
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          tag: "nhaminh-transaction",
+        })
+      );
+    }
+  } catch (e) {
+    console.error("[sw.ts] Push event processing error", e);
+  }
+});
+
+// Notification click logic
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(

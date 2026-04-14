@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getToken } from "firebase/messaging";
+import { getToken, onMessage, Unsubscribe } from "firebase/messaging";
 import { getMessagingInstance } from "@/lib/firebase/client";
 
 export function useFCM() {
@@ -54,6 +54,28 @@ export function useFCM() {
       requestPermission();
     }
   }, [requestPermission]);
+
+  // Listen for foreground messages
+  useEffect(() => {
+    let unsubscribe: Unsubscribe | null = null;
+
+    const setupListener = async () => {
+      const messaging = await getMessagingInstance();
+      if (!messaging) return;
+      
+      unsubscribe = onMessage(messaging, (payload) => {
+        console.log("Foreground message received:", payload);
+        const { title, body } = (payload as any).notification;
+        alert(`${title}\n${body}`);
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   return { permission, requestPermission };
 }

@@ -46,6 +46,24 @@ export default function HomePage() {
         animate={{ opacity: 1, y: 0 }}
         className="sticky top-0 z-30 glass safe-top px-4 pt-4 pb-3"
       >
+        {/* Global Loading Bar */}
+        <AnimatePresence>
+          {loading && (
+            <motion.div
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-500 via-purple-500 to-violet-500 origin-left z-50 overflow-hidden"
+            >
+              <motion.div
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="w-full h-full bg-white/30"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center">

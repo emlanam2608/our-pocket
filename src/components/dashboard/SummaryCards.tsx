@@ -20,8 +20,9 @@ export function SummaryCards({ transactions, loading }: SummaryCardsProps) {
 
   const totals = transactions.reduce(
     (acc, t) => {
-      if (t.type === "income") acc.income += t.amount;
-      else acc.expense += t.amount;
+      const amount = Number(t.amount) || 0;
+      if (t.type === "income") acc.income += amount;
+      else acc.expense += amount;
       return acc;
     },
     { income: 0, expense: 0 }

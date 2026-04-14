@@ -37,7 +37,8 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
     const expenses = transactions.filter((t) => t.type === "expense");
     const grouped: Record<string, number> = {};
     for (const t of expenses) {
-      grouped[t.categoryId] = (grouped[t.categoryId] || 0) + t.amount;
+      const amount = Number(t.amount) || 0;
+      grouped[t.categoryId] = (grouped[t.categoryId] || 0) + amount;
     }
 
     return Object.entries(grouped)

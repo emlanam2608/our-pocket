@@ -13,6 +13,9 @@ import {
   limit,
   startAfter,
   QueryDocumentSnapshot,
+  updateDoc,
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { Transaction } from "@/lib/constants";
@@ -63,11 +66,27 @@ export function useTransactions(monthStart?: Date, monthEnd?: Date) {
 
 export async function addTransaction(
   data: Omit<Transaction, "id" | "timestamp">,
-  timestamp: Date
+  date: Date = new Date()
 ) {
-  const ref = await addDoc(collection(db, "transactions"), {
+  return addDoc(collection(db, "transactions"), {
     ...data,
-    timestamp: Timestamp.fromDate(timestamp),
+    timestamp: Timestamp.fromDate(date),
   });
-  return ref.id;
+}
+
+export async function updateTransaction(
+  id: string,
+  data: Partial<Omit<Transaction, "id" | "timestamp">>,
+  date?: Date
+) {
+  const docRef = doc(db, "transactions", id);
+  const updateData: any = { ...data };
+  if (date) {
+    updateData.timestamp = Timestamp.fromDate(date);
+  }
+  return updateDoc(docRef, updateData);
+}
+
+export async function deleteTransaction(id: string) {
+  return deleteDoc(doc(db, "transactions", id));
 }

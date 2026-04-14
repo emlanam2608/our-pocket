@@ -11,9 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface TransactionListProps {
   transactions: Transaction[];
   loading: boolean;
+  onEdit: (t: Transaction) => void;
 }
 
-export function TransactionList({ transactions, loading }: TransactionListProps) {
+export function TransactionList({ transactions, loading, onEdit }: TransactionListProps) {
   if (loading) {
     return (
       <div className="space-y-2">
@@ -65,7 +66,8 @@ export function TransactionList({ transactions, loading }: TransactionListProps)
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="glass rounded-xl p-3 flex items-center gap-3"
+                    onClick={() => onEdit(t)}
+                    className="glass rounded-xl p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all"
                   >
                     {/* Category icon blob */}
                     <div

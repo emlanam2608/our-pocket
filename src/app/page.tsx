@@ -11,19 +11,20 @@ import { TransactionForm } from "@/components/transaction/TransactionForm";
 import { MonthPicker } from "@/components/dashboard/MonthPicker";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useFCM } from "@/hooks/useFCM";
+import type { Transaction } from "@/lib/constants";
 
 export default function HomePage() {
   const { permission, requestPermission } = useFCM();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeTab, setActiveTab] = useState<"summary" | "transactions">("summary");
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Memoize date ranges to prevent infinite re-renders in useTransactions
   const dateRange = useMemo(() => {
     return {
       start: startOfMonth(currentMonth),
@@ -38,7 +39,7 @@ export default function HomePage() {
     : "Nhà";
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto flex flex-col safe-top">
+    <div className="min-h-screen max-w-lg mx-auto flex flex-col safe-top pb-24">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -16 }}
@@ -64,7 +65,6 @@ export default function HomePage() {
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={requestPermission}
                 className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-full text-purple-300 text-xs font-semibold transition-colors"
-                title="Bật thông báo"
               >
                 <Bell className="w-3.5 h-3.5" />
                 Bật thông báo
@@ -98,7 +98,7 @@ export default function HomePage() {
       </motion.header>
 
       {/* Content */}
-      <main className="flex-1 px-4 py-4 pb-28 space-y-4">
+      <main className="flex-1 px-4 py-4 space-y-4">
         <AnimatePresence>
           {error && (
             <motion.div
@@ -127,8 +127,6 @@ export default function HomePage() {
             key="summary"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
             className="space-y-4"
           >
             <SummaryCards transactions={transactions} loading={loading} />
@@ -139,15 +137,20 @@ export default function HomePage() {
             key="transactions"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
           >
-            <TransactionList transactions={transactions} loading={loading} />
+            <TransactionList 
+              transactions={transactions} 
+              loading={loading} 
+              onEdit={setEditingTransaction} 
+            />
           </motion.div>
         )}
       </main>
 
-      <TransactionForm />
+      <TransactionForm 
+        editData={editingTransaction} 
+        onClose={() => setEditingTransaction(null)} 
+      />
     </div>
   );
 }

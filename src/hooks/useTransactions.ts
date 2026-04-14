@@ -79,14 +79,26 @@ export async function updateTransaction(
   data: Partial<Omit<Transaction, "id" | "timestamp">>,
   date?: Date
 ) {
-  const docRef = doc(db, "transactions", id);
-  const updateData: any = { ...data };
-  if (date) {
-    updateData.timestamp = Timestamp.fromDate(date);
+  try {
+    console.log("Updating transaction:", id, data);
+    const docRef = doc(db, "transactions", id);
+    const updateData: any = { ...data };
+    if (date) {
+      updateData.timestamp = Timestamp.fromDate(date);
+    }
+    return await updateDoc(docRef, updateData);
+  } catch (error) {
+    console.error("useTransactions: updateTransaction error", error);
+    throw error;
   }
-  return updateDoc(docRef, updateData);
 }
 
 export async function deleteTransaction(id: string) {
-  return deleteDoc(doc(db, "transactions", id));
+  try {
+    console.log("Deleting transaction:", id);
+    return await deleteDoc(doc(db, "transactions", id));
+  } catch (error) {
+    console.error("useTransactions: deleteTransaction error", error);
+    throw error;
+  }
 }

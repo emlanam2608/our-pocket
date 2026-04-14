@@ -14,10 +14,19 @@ export function formatVND(amount: number): string {
 }
 
 export function formatInputNumber(value: string): string {
-  const num = value.replace(/\D/g, "");
-  return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  
+  // Preserve sequences of zeros (e.g., "000") to allow easier typing/editing
+  if (/^0+$/.test(digits)) return digits;
+
+  // Convert to number and back to string to remove unwanted leading zeros (e.g., "0500" -> "500")
+  // but keep the dot formatting
+  const numValue = parseInt(digits, 10);
+  return String(numValue).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 export function parseInputNumber(value: string): number {
-  return parseInt(value.replace(/\./g, ""), 10) || 0;
+  const digits = value.replace(/\D/g, "");
+  return parseInt(digits, 10) || 0;
 }

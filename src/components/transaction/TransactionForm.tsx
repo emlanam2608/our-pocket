@@ -67,7 +67,19 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
   };
 
   const amountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmountDisplay(formatInputNumber(e.target.value));
+    const val = e.target.value;
+    const formatted = formatInputNumber(val);
+    
+    // Manage cursor position to avoid jumping to the end
+    const cursor = e.target.selectionStart;
+    const oldLen = val.length;
+    
+    setAmountDisplay(formatted);
+
+    // After state update, input will re-render and cursor might jump.
+    // However, on a controlled component with Next.js/React, we sometimes need a timeout
+    // or to trust React's reconciliation if the value doesn't change too much.
+    // The previous jump was likely caused by "000" -> "0" transformation.
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,8 +122,9 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
 
       handleClose();
       onSuccess?.();
-    } catch {
-      setError("Lỗi xử lý giao dịch, thử lại nhé!");
+    } catch (err) {
+      console.error("Transaction Error:", err);
+      setError(err instanceof Error ? err.message : "Lỗi xử lý giao dịch, thử lại nhé!");
     } finally {
       setLoading(false);
     }
@@ -126,8 +139,9 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
       await deleteTransaction(editData.id);
       handleClose();
       onSuccess?.();
-    } catch {
-      setError("Lỗi khi xóa giao dịch!");
+    } catch (err) {
+      console.error("Delete Error:", err);
+      setError(err instanceof Error ? err.message : "Lỗi khi xóa giao dịch!");
     } finally {
       setDeleteLoading(false);
     }

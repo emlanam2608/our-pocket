@@ -10,8 +10,7 @@ service cloud.firestore {
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.type in ['income','expense'];
-      // No updates or deletes from client
-      allow update, delete: if false;
+      allow update, delete: if request.auth != null;
     }
 
     // FCM tokens: any authed user can write their own token

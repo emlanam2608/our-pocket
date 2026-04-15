@@ -39,7 +39,7 @@ export function useAssets() {
         console.error("Firestore subscription error:", err);
         setError(err);
         setLoading(false);
-      }
+      },
     );
 
     return unsub;
@@ -50,10 +50,10 @@ export function useAssets() {
 
 export function getAssetSummary(
   entries: AssetEntry[],
-  type: AssetType
+  type: AssetType,
 ): AssetSummary {
   const filteredEntries = entries.filter((e) => e.type === type);
-  
+
   const summary: AssetSummary = {
     type,
     totalAmount: filteredEntries.reduce((sum, e) => sum + (e.amount || 0), 0),
@@ -62,7 +62,10 @@ export function getAssetSummary(
   };
 
   if (type === "gold") {
-    summary.totalCost = filteredEntries.reduce((sum, e) => sum + (e.cost || 0), 0);
+    summary.totalCost = filteredEntries.reduce(
+      (sum, e) => sum + (e.cost || 0),
+      0,
+    );
   }
 
   return summary;
@@ -70,7 +73,7 @@ export function getAssetSummary(
 
 export async function addAssetEntry(
   data: Omit<AssetEntry, "id" | "timestamp">,
-  date: Date = new Date()
+  date: Date = new Date(),
 ) {
   return addDoc(collection(db, "assets"), {
     ...data,
@@ -81,7 +84,7 @@ export async function addAssetEntry(
 export async function updateAssetEntry(
   id: string,
   data: Partial<Omit<AssetEntry, "id" | "timestamp">>,
-  date?: Date
+  date?: Date,
 ) {
   try {
     const docRef = doc(db, "assets", id);
@@ -94,6 +97,12 @@ export async function updateAssetEntry(
     console.error("useAssets: updateAssetEntry error", error);
     throw error;
   }
+}
+
+export function getUniqueFundNames(assets: AssetEntry[]): string[] {
+  const fundAssets = assets.filter((e) => e.type === "funds" && e.fundName);
+  const uniqueNames = Array.from(new Set(fundAssets.map((e) => e.fundName as string)));
+  return uniqueNames.sort();
 }
 
 export async function deleteAssetEntry(id: string) {

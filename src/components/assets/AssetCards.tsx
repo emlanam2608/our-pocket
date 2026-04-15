@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Wallet, PiggyBank } from "lucide-react";
 import { formatVND } from "@/lib/utils";
-import { AssetEntry, ASSET_COLORS, ASSET_ICONS, ASSET_LABELS } from "@/lib/constants";
+import {
+  AssetEntry,
+  ASSET_COLORS,
+  ASSET_ICONS,
+  ASSET_LABELS,
+} from "@/lib/constants";
 import { getAssetSummary } from "@/hooks/useAssets";
 
 interface AssetCardsProps {
@@ -73,11 +78,13 @@ export function AssetCards({ assets, loading }: AssetCardsProps) {
         >
           <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider ${card.textColor} opacity-80 mb-1`}>
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${card.textColor} opacity-80 mb-1`}
+              >
                 {card.title}
               </p>
               <h3 className="text-2xl font-bold text-white tracking-tight">
-                {card.unit === "g" 
+                {card.unit === "g"
                   ? `${card.amount.toFixed(2)}g`
                   : formatVND(card.amount)}
               </h3>

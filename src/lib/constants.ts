@@ -8,6 +8,9 @@ export const CATEGORIES = [
   { id: "rent", label: "🏠 Thuê nhà", icon: "🏠", type: "expense" },
   { id: "education", label: "📚 Giáo dục", icon: "📚", type: "expense" },
   { id: "other_expense", label: "📦 Khác", icon: "📦", type: "expense" },
+  { id: "buy_gold", label: "🏆 Mua vàng", icon: "🏆", type: "expense", assetType: "gold" },
+  { id: "add_funds", label: "💰 Thêm quỹ", icon: "💰", type: "expense", assetType: "funds" },
+  { id: "add_savings", label: "🏦 Thêm tiết kiệm", icon: "🏦", type: "expense", assetType: "savings" },
   { id: "salary", label: "💰 Lương", icon: "💰", type: "income" },
   { id: "bonus", label: "🎁 Thưởng", icon: "🎁", type: "income" },
   { id: "freelance", label: "💻 Freelance", icon: "💻", type: "income" },
@@ -26,6 +29,9 @@ export const CATEGORY_COLORS: Record<string, string> = {
   rent: "#6366f1",
   education: "#14b8a6",
   other_expense: "#6b7280",
+  buy_gold: "#fbbf24",
+  add_funds: "#10b981",
+  add_savings: "#3b82f6",
   salary: "#22c55e",
   bonus: "#eab308",
   freelance: "#06b6d4",
@@ -43,6 +49,8 @@ export interface Transaction {
   timestamp: Date;
   createdBy: string;
   senderToken?: string;
+  assetAmount?: number; // For asset-linked transactions (e.g., grams of gold)
+  assetCost?: number; // For gold purchases, the cost paid
 }
 
 export type AssetType = "gold" | "funds" | "savings";
@@ -53,6 +61,7 @@ export interface AssetEntry {
   amount: number; // grams for gold, currency for funds/savings
   cost?: number; // cost in currency for gold entries
   description?: string; // for funds/savings entries
+  fundName?: string; // for funds type entries (e.g., "Emergency Fund")
   timestamp: Date;
   createdBy: string;
 }

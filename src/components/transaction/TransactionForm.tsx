@@ -14,10 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIES } from "@/lib/constants";
-import type { Transaction } from "@/lib/constants";
+import { CATEGORIES, type Transaction } from "@/lib/constants";
 import { formatInputNumber, parseInputNumber } from "@/lib/utils";
 import { addTransaction, updateTransaction, deleteTransaction } from "@/hooks/useTransactions";
+import { addAssetEntry, useAssets, getUniqueFundNames } from "@/hooks/useAssets";
 
 interface TransactionFormProps {
   editData?: Transaction | null;
@@ -31,10 +31,24 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [amountDisplay, setAmountDisplay] = useState("");
+  const [assetAmountDisplay, setAssetAmountDisplay] = useState("");
+  const [assetCostDisplay, setAssetCostDisplay] = useState("");
+  const [fundName, setFundName] = useState("");
+  const [newFundName, setNewFundName] = useState("");
   const [timestamp, setTimestamp] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Get assets for fund selection
+  const { assets } = useAssets();
+  const fundNames = getUniqueFundNames(assets);
+
+  // Get selected category
+  const selectedCategory = CATEGORIES.find((c) => c.id === categoryId);
+  const isAssetLinked = selectedCategory && "assetType" in selectedCategory && selectedCategory.assetType;
+  const assetType = isAssetLinked ? selectedCategory.assetType : null;
+  const isFundsCategory = categoryId === "add_funds";
 
   // Sync with editData
   useEffect(() => {
@@ -43,6 +57,8 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
       setCategoryId(editData.categoryId);
       setDescription(editData.description || "");
       setAmountDisplay(formatInputNumber(String(editData.amount)));
+      setAssetAmountDisplay(editData.assetAmount ? formatInputNumber(String(editData.assetAmount)) : "");
+      setAssetCostDisplay(editData.assetCost ? formatInputNumber(String(editData.assetCost)) : "");
       setTimestamp(format(editData.timestamp, "yyyy-MM-dd'T'HH:mm"));
       setOpen(true);
     }
@@ -56,6 +72,10 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
     setCategoryId("");
     setDescription("");
     setAmountDisplay("");
+    setAssetAmountDisplay("");
+    setAssetCostDisplay("");
+    setFundName("");
+    setNewFundName("");
     setTimestamp(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
     setError("");
     onClose?.();
@@ -87,9 +107,30 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
     if (!categoryId) return setError("Chọn danh mục nào!");
     if (amount <= 0) return setError("Nhập số tiền đi bạn!");
 
+    // Validate asset fields if asset-linked
+    if (isAssetLinked) {
+      const assetAmount = parseInputNumber(assetAmountDisplay);
+      if (assetAmount <= 0) {
+        return setError(assetType === "gold" ? "Nhập số lượng vàng đi!" : "Nhập số lượng đi!");
+      }
+      if (assetType === "gold" && parseInputNumber(assetCostDisplay) <= 0) {
+        return setError("Nhập giá trị vàng đi!");
+      }
+      // For funds, validate fund name
+      if (assetType === "funds") {
+        const selectedFund = newFundName || fundName;
+        if (!selectedFund) {
+          return setError("Chọn hoặc tạo tên quỹ đi!");
+        }
+      }
+    }
+
     setLoading(true);
     setError("");
     try {
+      const displayName = localStorage.getItem("nhaminh-displayname") ?? "Ai đó";
+      const selectedDate = new Date(timestamp);
+
       if (editData) {
         // UPDATE
         await updateTransaction(
@@ -99,12 +140,13 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
             categoryId,
             description: description.trim(),
             amount,
+            ...(isAssetLinked ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
+            ...(assetType === "gold" ? { assetCost: parseInputNumber(assetCostDisplay) } : {}),
           },
-          new Date(timestamp)
+          selectedDate
         );
       } else {
         // CREATE
-        const displayName = localStorage.getItem("nhaminh-displayname") ?? "Ai đó";
         const senderToken = sessionStorage.getItem("fcm-token") ?? undefined;
 
         await addTransaction(
@@ -115,9 +157,30 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
             amount,
             createdBy: displayName,
             ...(senderToken ? { senderToken } : {}),
+            ...(isAssetLinked ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
+            ...(assetType === "gold" ? { assetCost: parseInputNumber(assetCostDisplay) } : {}),
           },
-          new Date(timestamp)
+          selectedDate
         );
+
+        // Also create asset entry if asset-linked
+        if (isAssetLinked && assetType) {
+          const assetAmount = parseInputNumber(assetAmountDisplay);
+          const assetData: any = {
+            type: assetType,
+            amount: assetAmount,
+            createdBy: displayName,
+          };
+          if (assetType === "gold") {
+            assetData.cost = parseInputNumber(assetCostDisplay);
+          } else if (assetType === "funds") {
+            assetData.fundName = newFundName || fundName;
+            assetData.description = description.trim() || `Thêm ${assetData.fundName}`;
+          } else {
+            assetData.description = description.trim() || `Thêm ${assetType}`;
+          }
+          await addAssetEntry(assetData, selectedDate);
+        }
       }
 
       handleClose();
@@ -262,6 +325,107 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                       maxLength={80}
                     />
                   </div>
+
+                  {/* Asset-linked fields */}
+                  {isAssetLinked && assetType === "gold" && (
+                    <>
+                      <div className="space-y-1.5 pt-2 border-t border-white/10">
+                        <Label className="text-yellow-400 text-xs uppercase tracking-wider">Số lượng vàng (grams)</Label>
+                        <div className="relative">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={assetAmountDisplay}
+                            onChange={(e) => setAssetAmountDisplay(e.target.value)}
+                            placeholder="0.00"
+                            className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-lg font-semibold pr-8 text-right"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">g</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-yellow-400 text-xs uppercase tracking-wider">Giá trị vàng (VND)</Label>
+                        <div className="relative">
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={assetCostDisplay}
+                            onChange={(e) => setAssetCostDisplay(e.target.value)}
+                            placeholder="0"
+                            className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-lg font-semibold pr-8 text-right"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₫</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {isAssetLinked && assetType !== "gold" && (
+                    <div className="space-y-1.5 pt-2 border-t border-white/10">
+                      {assetType === "funds" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label className="text-green-400 text-xs uppercase tracking-wider">Chọn quỹ</Label>
+                            {fundNames.length > 0 && !newFundName && (
+                              <Select value={fundName} onValueChange={setFundName}>
+                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-11">
+                                  <SelectValue placeholder="Chọn quỹ hiện có..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-white/10">
+                                  {fundNames.map((name) => (
+                                    <SelectItem key={name} value={name} className="text-white hover:bg-white/10">
+                                      {name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {fundNames.length > 0 && !newFundName && (
+                              <p className="text-xs text-zinc-500 text-center">hoặc</p>
+                            )}
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-green-400 text-xs uppercase tracking-wider">Tạo quỹ mới</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                type="text"
+                                value={newFundName}
+                                onChange={(e) => {
+                                  setNewFundName(e.target.value);
+                                  if (e.target.value) setFundName("");
+                                }}
+                                placeholder="VD: Quỹ khẩn cấp"
+                                className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-11 flex-1"
+                                maxLength={30}
+                              />
+                              {newFundName && (
+                                <button
+                                  type="button"
+                                  onClick={() => setNewFundName("")}
+                                  className="w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <div className="space-y-1.5">
+                        <Label className="text-green-400 text-xs uppercase tracking-wider">Số lượng {assetType === "funds" ? "quỹ" : "tiết kiệm"}</Label>
+                        <div className="relative">
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={assetAmountDisplay}
+                            onChange={(e) => setAssetAmountDisplay(e.target.value)}
+                            placeholder="0"
+                            className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-lg font-semibold pr-8 text-right"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₫</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-1.5">
                     <Label className="text-zinc-400 text-xs uppercase tracking-wider">Thời gian</Label>

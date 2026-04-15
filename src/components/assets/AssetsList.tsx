@@ -31,7 +31,10 @@ export function AssetsList({ assets, loading, onEdit }: AssetsListProps) {
     return (
       <div className="space-y-2">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-xl skeleton-shimmer bg-white/5" />
+          <Skeleton
+            key={i}
+            className="h-16 rounded-xl skeleton-shimmer bg-white/5"
+          />
         ))}
       </div>
     );
@@ -98,7 +101,8 @@ export function AssetsList({ assets, loading, onEdit }: AssetsListProps) {
                       </p>
                     )}
                     <p className="text-zinc-600 text-xs">
-                      {format(a.timestamp, "HH:mm", { locale: vi })} · {a.createdBy}
+                      {format(a.timestamp, "HH:mm", { locale: vi })} ·{" "}
+                      {a.createdBy}
                     </p>
                   </div>
 

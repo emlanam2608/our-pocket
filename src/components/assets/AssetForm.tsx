@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus } from "lucide-react";
-import { AssetEntry, AssetType, ASSET_LABELS, ASSET_ICONS } from "@/lib/constants";
+import {
+  AssetEntry,
+  AssetType,
+  ASSET_LABELS,
+  ASSET_ICONS,
+} from "@/lib/constants";
 import { addAssetEntry, updateAssetEntry } from "@/hooks/useAssets";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,7 +27,9 @@ export function AssetForm({ editData, onClose, displayName }: AssetFormProps) {
   const [cost, setCost] = useState(editData?.cost?.toString() || "");
   const [description, setDescription] = useState(editData?.description || "");
   const [date, setDate] = useState(
-    editData ? editData.timestamp.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
+    editData
+      ? editData.timestamp.toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
   );
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +56,7 @@ export function AssetForm({ editData, onClose, displayName }: AssetFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
       alert("Vui lòng nhập số lượng hợp lệ");

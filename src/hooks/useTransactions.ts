@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   collection,
   query,
@@ -9,10 +9,7 @@ import {
   addDoc,
   Timestamp,
   where,
-  getDocs,
   limit,
-  startAfter,
-  QueryDocumentSnapshot,
   updateDoc,
   deleteDoc,
   doc,
@@ -22,23 +19,36 @@ import type { Transaction } from "@/lib/constants";
 
 const PAGE_SIZE = 30;
 
-export function useTransactions(monthStart?: Date, monthEnd?: Date) {
+export function useTransactions(
+  monthStart?: Date,
+  monthEnd?: Date,
+  createdBy?: string,
+) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    setError(null);
-    const constraints: Parameters<typeof query>[1][] = [orderBy("timestamp", "desc")];
+    const constraints: Parameters<typeof query>[1][] = [
+      orderBy("timestamp", "desc"),
+    ];
 
     if (monthStart && monthEnd) {
       constraints.unshift(
         where("timestamp", ">=", Timestamp.fromDate(monthStart)),
-        where("timestamp", "<=", Timestamp.fromDate(monthEnd))
+        where("timestamp", "<=", Timestamp.fromDate(monthEnd)),
       );
     }
 
-    const q = query(collection(db, "transactions"), ...constraints, limit(PAGE_SIZE));
+    if (createdBy) {
+      constraints.push(where("createdBy", "==", createdBy));
+    }
+
+    const q = query(
+      collection(db, "transactions"),
+      ...constraints,
+      limit(PAGE_SIZE),
+    );
 
     const unsub = onSnapshot(
       q,
@@ -46,27 +56,28 @@ export function useTransactions(monthStart?: Date, monthEnd?: Date) {
         const docs: Transaction[] = snap.docs.map((d) => ({
           id: d.id,
           ...(d.data() as Omit<Transaction, "id" | "timestamp">),
-          timestamp: (d.data().timestamp as any).toDate(),
+          timestamp: (d.data().timestamp as Timestamp).toDate(),
         }));
         setTransactions(docs);
+        setError(null);
         setLoading(false);
       },
       (err) => {
         console.error("Firestore subscription error:", err);
         setError(err);
         setLoading(false);
-      }
+      },
     );
 
     return unsub;
-  }, [monthStart, monthEnd]);
+  }, [monthStart, monthEnd, createdBy]);
 
   return { transactions, loading, error };
 }
 
 export async function addTransaction(
   data: Omit<Transaction, "id" | "timestamp">,
-  date: Date = new Date()
+  date: Date = new Date(),
 ) {
   return addDoc(collection(db, "transactions"), {
     ...data,
@@ -77,12 +88,12 @@ export async function addTransaction(
 export async function updateTransaction(
   id: string,
   data: Partial<Omit<Transaction, "id" | "timestamp">>,
-  date?: Date
+  date?: Date,
 ) {
   try {
     console.log("Updating transaction:", id, data);
     const docRef = doc(db, "transactions", id);
-    const updateData: any = { ...data };
+    const updateData: Record<string, unknown> = { ...data };
     if (date) {
       updateData.timestamp = Timestamp.fromDate(date);
     }

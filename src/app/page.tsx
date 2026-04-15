@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart2, List, Bell, ShieldAlert } from "lucide-react";
+import {
+  BarChart2,
+  List,
+  Bell,
+  ShieldAlert,
+  X,
+  User,
+  Check,
+} from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
 import { TransactionList } from "@/components/transaction/TransactionList";
 import { TransactionForm } from "@/components/transaction/TransactionForm";
 import { MonthPicker } from "@/components/dashboard/MonthPicker";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useFCM } from "@/hooks/useFCM";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
@@ -18,20 +28,38 @@ export default function HomePage() {
   const { permission, requestPermission } = useFCM();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<"summary" | "transactions">("summary");
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [mounted, setMounted] = useState(false);
-  const [displayName, setDisplayName] = useState("Nhà");
+  const [activeTab, setActiveTab] = useState<"summary" | "transactions">(
+    "summary",
+  );
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+  const mounted = typeof window !== "undefined";
+  const [displayName, setDisplayName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nhaminh-displayname") || "";
+    }
+    return "";
+  });
+  const [nameInput, setNameInput] = useState("");
+  const [selectedPerson, setSelectedPerson] = useState<string | undefined>(
+    undefined,
+  );
 
-  useEffect(() => {
-    setMounted(true);
-    const savedName = localStorage.getItem("nhaminh-displayname");
-    if (savedName) setDisplayName(savedName);
-  }, []);
+  const handleInitialNameSubmit = (name: string) => {
+    const trimmedName = name.trim();
+    if (trimmedName) {
+      setDisplayName(trimmedName);
+      localStorage.setItem("nhaminh-displayname", trimmedName);
+      setNameInput("");
+    }
+  };
 
   const handleNameUpdate = async (newName: string) => {
-    setDisplayName(newName);
-    localStorage.setItem("nhaminh-displayname", newName);
+    const trimmedName = newName.trim();
+    if (!trimmedName) return;
+
+    setDisplayName(trimmedName);
+    localStorage.setItem("nhaminh-displayname", trimmedName);
 
     // Sync FCM token if exists
     const token = sessionStorage.getItem("fcm-token");
@@ -52,7 +80,7 @@ export default function HomePage() {
             deviceType,
             userAgent: ua,
             language: navigator.language,
-            displayName: newName,
+            displayName: trimmedName,
           }),
         });
       } catch (err) {
@@ -68,7 +96,85 @@ export default function HomePage() {
     };
   }, [currentMonth]);
 
-  const { transactions, loading, error } = useTransactions(dateRange.start, dateRange.end);
+  const {
+    transactions: allTransactions,
+    loading,
+    error,
+  } = useTransactions(dateRange.start, dateRange.end);
+
+  // Get unique persons and filter transactions
+  const uniquePersons = useMemo(() => {
+    const persons = Array.from(
+      new Set(allTransactions.map((t) => t.createdBy)),
+    ).sort();
+    return persons;
+  }, [allTransactions]);
+
+  const transactions = useMemo(() => {
+    if (!selectedPerson) return allTransactions;
+    return allTransactions.filter((t) => t.createdBy === selectedPerson);
+  }, [allTransactions, selectedPerson]);
+
+  // Show initial name setup modal if no name is set
+  if (!displayName) {
+    return (
+      <div className="min-h-screen max-w-lg mx-auto flex flex-col items-center justify-center safe-top pb-24 px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-sm"
+        >
+          <div className="bg-linear-to-br from-violet-600/10 to-purple-600/10 border border-white/10 backdrop-blur-xl rounded-3xl p-8">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-xl shadow-purple-900/30">
+                <User className="w-8 h-8 text-white" />
+              </div>
+            </div>
+
+            <h1 className="text-2xl font-bold text-white text-center mb-2">
+              Xin chào!
+            </h1>
+            <p className="text-zinc-400 text-center text-sm mb-8">
+              Vui lòng nhập tên của bạn để tiếp tục
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
+                  Tên hiển thị
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Input
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleInitialNameSubmit(nameInput);
+                      }
+                    }}
+                    autoFocus
+                    className="pl-11 bg-white/3 border-white/5 focus:border-purple-500/50 focus:ring-purple-500/20 transition-all h-14 text-base rounded-2xl placeholder:text-zinc-600"
+                    placeholder="Nhập tên của bạn..."
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={() => handleInitialNameSubmit(nameInput)}
+                disabled={!nameInput.trim()}
+                className="w-full bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white border-0 shadow-xl shadow-purple-900/30 h-14 transition-all font-bold gap-2 rounded-2xl"
+              >
+                <Check className="w-4 h-4" />
+                Tiếp tục
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen max-w-lg mx-auto flex flex-col safe-top pb-24">
@@ -85,7 +191,7 @@ export default function HomePage() {
               initial={{ scaleX: 0, opacity: 0 }}
               animate={{ scaleX: 1, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-500 via-purple-500 to-violet-500 origin-left z-50 overflow-hidden"
+              className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-violet-500 via-purple-500 to-violet-500 origin-left z-50 overflow-hidden"
             >
               <motion.div
                 animate={{ x: ["-100%", "100%"] }}
@@ -98,7 +204,10 @@ export default function HomePage() {
 
         <div className="flex items-center justify-between mb-3">
           {mounted ? (
-            <ProfileSettings currentName={displayName} onUpdate={handleNameUpdate} />
+            <ProfileSettings
+              currentName={displayName}
+              onUpdate={handleNameUpdate}
+            />
           ) : (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-violet-500/20 animate-pulse" />
@@ -126,6 +235,36 @@ export default function HomePage() {
         </div>
 
         <MonthPicker month={currentMonth} onChange={setCurrentMonth} />
+
+        {/* Person Filter */}
+        {uniquePersons.length > 1 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <motion.button
+              onClick={() => setSelectedPerson(undefined)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                selectedPerson === undefined
+                  ? "bg-purple-600/70 text-white shadow"
+                  : "bg-white/5 text-zinc-400 hover:text-zinc-300"
+              }`}
+            >
+              Tất cả
+            </motion.button>
+            {uniquePersons.map((person) => (
+              <motion.button
+                key={person}
+                onClick={() => setSelectedPerson(person)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  selectedPerson === person
+                    ? "bg-purple-600/70 text-white shadow"
+                    : "bg-white/5 text-zinc-400 hover:text-zinc-300"
+                }`}
+              >
+                {person}
+                {selectedPerson === person && <X className="w-3 h-3" />}
+              </motion.button>
+            ))}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 mt-3 p-1 bg-white/5 rounded-xl">
@@ -163,11 +302,11 @@ export default function HomePage() {
               <div className="flex-1">
                 <p className="font-bold">Lỗi kết nối dữ liệu</p>
                 <p className="text-xs opacity-70 leading-tight">
-                  {error.message.includes("permission-denied") 
+                  {error.message.includes("permission-denied")
                     ? "Bạn chưa có quyền truy cập. Hãy bật 'Anonymous Auth' trong Firebase."
-                    : error.message.includes("index") 
-                    ? "Cần tạo chỉ mục Firestore. Hãy mở trang web trên máy tính để xem link tạo."
-                    : error.message}
+                    : error.message.includes("index")
+                      ? "Cần tạo chỉ mục Firestore. Hãy mở trang web trên máy tính để xem link tạo."
+                      : error.message}
                 </p>
               </div>
             </motion.div>
@@ -190,18 +329,18 @@ export default function HomePage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <TransactionList 
-              transactions={transactions} 
-              loading={loading} 
-              onEdit={setEditingTransaction} 
+            <TransactionList
+              transactions={transactions}
+              loading={loading}
+              onEdit={setEditingTransaction}
             />
           </motion.div>
         )}
       </main>
 
-      <TransactionForm 
-        editData={editingTransaction} 
-        onClose={() => setEditingTransaction(null)} 
+      <TransactionForm
+        editData={editingTransaction}
+        onClose={() => setEditingTransaction(null)}
       />
     </div>
   );

@@ -44,3 +44,41 @@ export interface Transaction {
   createdBy: string;
   senderToken?: string;
 }
+
+export type AssetType = "gold" | "funds" | "savings";
+
+export interface AssetEntry {
+  id: string;
+  type: AssetType;
+  amount: number; // grams for gold, currency for funds/savings
+  cost?: number; // cost in currency for gold entries
+  description?: string; // for funds/savings entries
+  timestamp: Date;
+  createdBy: string;
+}
+
+export interface AssetSummary {
+  type: AssetType;
+  totalAmount: number;
+  totalCost?: number; // for gold
+  latestUpdate?: Date;
+  entriesCount: number;
+}
+
+export const ASSET_LABELS: Record<AssetType, string> = {
+  gold: "🏆 Vàng",
+  funds: "💰 Quỹ",
+  savings: "🏦 Tiết kiệm",
+};
+
+export const ASSET_ICONS: Record<AssetType, string> = {
+  gold: "🏆",
+  funds: "💰",
+  savings: "🏦",
+};
+
+export const ASSET_COLORS: Record<AssetType, string> = {
+  gold: "#fbbf24",
+  funds: "#10b981",
+  savings: "#3b82f6",
+};

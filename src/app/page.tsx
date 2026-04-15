@@ -10,29 +10,36 @@ import {
   X,
   User,
   Check,
+  Boxes,
 } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
+import { AssetCards } from "@/components/assets/AssetCards";
+import { AssetsList } from "@/components/assets/AssetsList";
+import { AssetForm } from "@/components/assets/AssetForm";
 import { TransactionList } from "@/components/transaction/TransactionList";
 import { TransactionForm } from "@/components/transaction/TransactionForm";
 import { MonthPicker } from "@/components/dashboard/MonthPicker";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useAssets } from "@/hooks/useAssets";
 import { useFCM } from "@/hooks/useFCM";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
-import type { Transaction } from "@/lib/constants";
+import type { Transaction, AssetEntry } from "@/lib/constants";
 
 export default function HomePage() {
   const { permission, requestPermission } = useFCM();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<"summary" | "transactions">(
+  const [activeTab, setActiveTab] = useState<"summary" | "transactions" | "assets">(
     "summary",
   );
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
+  const [editingAsset, setEditingAsset] =
+    useState<AssetEntry | null>(null);
   const mounted = typeof window !== "undefined";
   const [displayName, setDisplayName] = useState(() => {
     if (typeof window !== "undefined") {
@@ -101,6 +108,8 @@ export default function HomePage() {
     loading,
     error,
   } = useTransactions(dateRange.start, dateRange.end);
+
+  const { assets, loading: assetsLoading } = useAssets();
 
   // Get unique persons and filter transactions
   const uniquePersons = useMemo(() => {
@@ -271,10 +280,11 @@ export default function HomePage() {
           {[
             { id: "summary", label: "Tổng quan", icon: BarChart2 },
             { id: "transactions", label: "Giao dịch", icon: List },
+            { id: "assets", label: "Tài sản", icon: Boxes },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as "summary" | "transactions")}
+              onClick={() => setActiveTab(tab.id as "summary" | "transactions" | "assets")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
                   ? "bg-purple-600/70 text-white shadow"
@@ -321,9 +331,10 @@ export default function HomePage() {
             className="space-y-4"
           >
             <SummaryCards transactions={transactions} loading={loading} />
+            <AssetCards assets={assets} loading={assetsLoading} />
             <ExpenseChart transactions={transactions} loading={loading} />
           </motion.div>
-        ) : (
+        ) : activeTab === "transactions" ? (
           <motion.div
             key="transactions"
             initial={{ opacity: 0, x: 20 }}
@@ -335,6 +346,18 @@ export default function HomePage() {
               onEdit={setEditingTransaction}
             />
           </motion.div>
+        ) : (
+          <motion.div
+            key="assets"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <AssetsList
+              assets={assets}
+              loading={assetsLoading}
+              onEdit={setEditingAsset}
+            />
+          </motion.div>
         )}
       </main>
 
@@ -342,6 +365,14 @@ export default function HomePage() {
         editData={editingTransaction}
         onClose={() => setEditingTransaction(null)}
       />
+
+      {activeTab === "assets" && (
+        <AssetForm
+          editData={editingAsset}
+          onClose={() => setEditingAsset(null)}
+          displayName={displayName}
+        />
+      )}
     </div>
   );
 }

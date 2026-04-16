@@ -10,16 +10,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { deleteAssetEntry } from "@/hooks/useAssets";
 
 interface AssetsListProps {
+  houseId: string;  // NEW: which house these assets belong to
   assets: AssetEntry[];
   loading: boolean;
   onEdit: (asset: AssetEntry) => void;
 }
 
-export function AssetsList({ assets, loading, onEdit }: AssetsListProps) {
+export function AssetsList({ houseId, assets, loading, onEdit }: AssetsListProps) {
   const handleDelete = async (id: string) => {
     if (confirm("Bạn chắc chắn muốn xóa mục này?")) {
       try {
-        await deleteAssetEntry(id);
+        await deleteAssetEntry(houseId, id);
       } catch (error) {
         console.error("Failed to delete asset:", error);
         alert("Lỗi khi xóa mục");

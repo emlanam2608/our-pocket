@@ -15,13 +15,22 @@ import {
 import { db } from "@/lib/firebase/client";
 import type { AssetEntry, AssetType, AssetSummary } from "@/lib/constants";
 
-export function useAssets() {
+export function useAssets(houseId: string) {
   const [assets, setAssets] = useState<AssetEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "assets"), orderBy("timestamp", "desc"));
+    if (!houseId) {
+      setAssets([]);
+      setLoading(false);
+      return;
+    }
+
+    const q = query(
+      collection(db, "houses", houseId, "assets"),
+      orderBy("timestamp", "desc"),
+    );
 
     const unsub = onSnapshot(
       q,
@@ -43,7 +52,7 @@ export function useAssets() {
     );
 
     return unsub;
-  }, []);
+  }, [houseId]);
 
   return { assets, loading, error };
 }
@@ -72,22 +81,25 @@ export function getAssetSummary(
 }
 
 export async function addAssetEntry(
-  data: Omit<AssetEntry, "id" | "timestamp">,
+  houseId: string,
+  data: Omit<AssetEntry, "id" | "timestamp" | "houseId">,
   date: Date = new Date(),
 ) {
-  return addDoc(collection(db, "assets"), {
+  return addDoc(collection(db, "houses", houseId, "assets"), {
     ...data,
+    houseId,
     timestamp: Timestamp.fromDate(date),
   });
 }
 
 export async function updateAssetEntry(
+  houseId: string,
   id: string,
-  data: Partial<Omit<AssetEntry, "id" | "timestamp">>,
+  data: Partial<Omit<AssetEntry, "id" | "timestamp" | "houseId">>,
   date?: Date,
 ) {
   try {
-    const docRef = doc(db, "assets", id);
+    const docRef = doc(db, "houses", houseId, "assets", id);
     const updateData: Record<string, unknown> = { ...data };
     if (date) {
       updateData.timestamp = Timestamp.fromDate(date);
@@ -105,9 +117,9 @@ export function getUniqueFundNames(assets: AssetEntry[]): string[] {
   return uniqueNames.sort();
 }
 
-export async function deleteAssetEntry(id: string) {
+export async function deleteAssetEntry(houseId: string, id: string) {
   try {
-    return await deleteDoc(doc(db, "assets", id));
+    return await deleteDoc(doc(db, "houses", houseId, "assets", id));;
   } catch (error) {
     console.error("useAssets: deleteAssetEntry error", error);
     throw error;

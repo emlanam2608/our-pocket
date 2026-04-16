@@ -2,32 +2,53 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Transactions: any anonymous authenticated user can read/write
-    match /transactions/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['type','categoryId','amount','createdBy','timestamp'])
-        && request.resource.data.amount is number
-        && request.resource.data.amount > 0
-        && request.resource.data.type in ['income','expense'];
-      allow update, delete: if request.auth != null;
+    // Helper function to check if user is a member of a house
+    function isHouseMember(houseId) {
+      return exists(/databases/$(database)/documents/houses/$(houseId)/members/$(request.auth.uid));
+    }
+
+    // Houses collection: define structure and subcollections
+    match /houses/{houseId} {
+      // House document itself
+      allow read: if request.auth != null && isHouseMember(houseId);
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && isHouseMember(houseId);
+
+      // House members subcollection
+      match /members/{uid} {
+        allow read: if request.auth != null && isHouseMember(houseId);
+        allow write: if request.auth != null && isHouseMember(houseId);
+      }
+
+      // Transactions subcollection (scoped to house)
+      match /transactions/{docId} {
+        allow read: if request.auth != null && isHouseMember(houseId);
+        allow create: if request.auth != null && isHouseMember(houseId)
+          && request.resource.data.keys().hasAll(['type','categoryId','amount','createdBy','timestamp','houseId'])
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.type in ['income','expense']
+          && request.resource.data.houseId == houseId;
+        allow update, delete: if request.auth != null && isHouseMember(houseId);
+      }
+
+      // Assets subcollection (scoped to house)
+      match /assets/{docId} {
+        allow read: if request.auth != null && isHouseMember(houseId);
+        allow create: if request.auth != null && isHouseMember(houseId)
+          && request.resource.data.keys().hasAll(['type','amount','createdBy','timestamp','houseId'])
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.type in ['gold','funds','savings']
+          && request.resource.data.houseId == houseId;
+        allow update, delete: if request.auth != null && isHouseMember(houseId);
+      }
     }
 
     // FCM tokens: any authed user can write their own token
     match /fcmTokens/{token} {
       allow read: if false; // only Cloud Functions read these
       allow write: if request.auth != null;
-    }
-
-    // Assets: any authenticated user can read/write
-    match /assets/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['type','amount','createdBy','timestamp'])
-        && request.resource.data.amount is number
-        && request.resource.data.amount > 0
-        && request.resource.data.type in ['gold','funds','savings'];
-      allow update, delete: if request.auth != null;
     }
   }
 }

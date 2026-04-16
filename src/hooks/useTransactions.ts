@@ -20,6 +20,7 @@ import type { Transaction } from "@/lib/constants";
 const PAGE_SIZE = 30;
 
 export function useTransactions(
+  houseId: string,
   monthStart?: Date,
   monthEnd?: Date,
   createdBy?: string,
@@ -29,6 +30,12 @@ export function useTransactions(
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!houseId) {
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
+
     const constraints: Parameters<typeof query>[1][] = [
       orderBy("timestamp", "desc"),
     ];
@@ -45,7 +52,7 @@ export function useTransactions(
     }
 
     const q = query(
-      collection(db, "transactions"),
+      collection(db, "houses", houseId, "transactions"),
       ...constraints,
       limit(PAGE_SIZE),
     );
@@ -70,29 +77,32 @@ export function useTransactions(
     );
 
     return unsub;
-  }, [monthStart, monthEnd, createdBy]);
+  }, [houseId, monthStart, monthEnd, createdBy]);
 
   return { transactions, loading, error };
 }
 
 export async function addTransaction(
-  data: Omit<Transaction, "id" | "timestamp">,
+  houseId: string,
+  data: Omit<Transaction, "id" | "timestamp" | "houseId">,
   date: Date = new Date(),
 ) {
-  return addDoc(collection(db, "transactions"), {
+  return addDoc(collection(db, "houses", houseId, "transactions"), {
     ...data,
+    houseId,
     timestamp: Timestamp.fromDate(date),
   });
 }
 
 export async function updateTransaction(
+  houseId: string,
   id: string,
-  data: Partial<Omit<Transaction, "id" | "timestamp">>,
+  data: Partial<Omit<Transaction, "id" | "timestamp" | "houseId">>,
   date?: Date,
 ) {
   try {
     console.log("Updating transaction:", id, data);
-    const docRef = doc(db, "transactions", id);
+    const docRef = doc(db, "houses", houseId, "transactions", id);
     const updateData: Record<string, unknown> = { ...data };
     if (date) {
       updateData.timestamp = Timestamp.fromDate(date);
@@ -104,10 +114,10 @@ export async function updateTransaction(
   }
 }
 
-export async function deleteTransaction(id: string) {
+export async function deleteTransaction(houseId: string, id: string) {
   try {
     console.log("Deleting transaction:", id);
-    return await deleteDoc(doc(db, "transactions", id));
+    return await deleteDoc(doc(db, "houses", houseId, "transactions", id));;
   } catch (error) {
     console.error("useTransactions: deleteTransaction error", error);
     throw error;

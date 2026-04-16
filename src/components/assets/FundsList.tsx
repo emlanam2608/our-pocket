@@ -9,16 +9,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { deleteAssetEntry } from "@/hooks/useAssets";
 
 interface FundsListProps {
+  houseId: string;  // NEW: which house these funds belong to
   assets: AssetEntry[];
   loading: boolean;
   onEdit: (asset: AssetEntry) => void;
 }
 
-export function FundsList({ assets, loading, onEdit }: FundsListProps) {
+export function FundsList({ houseId, assets, loading, onEdit }: FundsListProps) {
   const handleDelete = async (id: string) => {
     if (confirm("Bạn chắc chắn muốn xóa mục này?")) {
       try {
-        await deleteAssetEntry(id);
+        await deleteAssetEntry(houseId, id);
       } catch (error) {
         console.error("Failed to delete fund:", error);
         alert("Lỗi khi xóa quỹ");

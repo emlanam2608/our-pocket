@@ -42,6 +42,7 @@ export type TransactionType = "income" | "expense";
 
 export interface Transaction {
   id: string;
+  houseId: string; // Which house/pocket this transaction belongs to
   type: TransactionType;
   categoryId: string;
   description: string;
@@ -57,6 +58,7 @@ export type AssetType = "gold" | "funds" | "savings";
 
 export interface AssetEntry {
   id: string;
+  houseId: string; // Which house/pocket this asset belongs to
   type: AssetType;
   amount: number; // grams for gold, currency for funds/savings
   cost?: number; // cost in currency for gold entries

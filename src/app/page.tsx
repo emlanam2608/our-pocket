@@ -11,6 +11,7 @@ import {
   User,
   Check,
   Boxes,
+  Plus,
 } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
@@ -42,6 +43,23 @@ export default function HomePage() {
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const mounted = typeof window !== "undefined";
+  
+  // House management - for now use a default house
+  const [currentHouseId, setCurrentHouseId] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("current-house-id") || "default-house";
+    }
+    return "default-house";
+  });
+
+  // Persist house selection
+  const handleSetHouse = (houseId: string) => {
+    setCurrentHouseId(houseId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("current-house-id", houseId);
+    }
+  };
+
   const [displayName, setDisplayName] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("nhaminh-displayname") || "";
@@ -108,9 +126,9 @@ export default function HomePage() {
     transactions: allTransactions,
     loading,
     error,
-  } = useTransactions(dateRange.start, dateRange.end);
+  } = useTransactions(currentHouseId, dateRange.start, dateRange.end);
 
-  const { assets, loading: assetsLoading } = useAssets();
+  const { assets, loading: assetsLoading } = useAssets(currentHouseId);
 
   // Get unique persons and filter transactions
   const uniquePersons = useMemo(() => {
@@ -357,7 +375,9 @@ export default function HomePage() {
             className="space-y-4"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Tài sản của tôi</h2>
+              <h2 className="text-lg font-semibold text-white">
+                Tài sản của tôi
+              </h2>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -372,6 +392,7 @@ export default function HomePage() {
               </motion.button>
             </div>
             <FundsList
+              houseId={currentHouseId}
               assets={assets}
               loading={assetsLoading}
               onEdit={setEditingAsset}
@@ -381,6 +402,7 @@ export default function HomePage() {
                 Toàn bộ tài sản
               </p>
               <AssetsList
+                houseId={currentHouseId}
                 assets={assets}
                 loading={assetsLoading}
                 onEdit={setEditingAsset}
@@ -391,12 +413,14 @@ export default function HomePage() {
       </main>
 
       <TransactionForm
+        houseId={currentHouseId}
         editData={editingTransaction}
         onClose={() => setEditingTransaction(null)}
       />
 
       {activeTab === "assets" && (
         <AssetForm
+          houseId={currentHouseId}
           editData={editingAsset}
           onClose={() => {
             setEditingAsset(null);

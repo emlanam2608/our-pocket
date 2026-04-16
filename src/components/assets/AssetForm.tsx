@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 interface AssetFormProps {
+  houseId: string;  // NEW: which house this asset is for
   editData?: AssetEntry | null;
   onClose: () => void;
   displayName: string;
@@ -22,7 +23,14 @@ interface AssetFormProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function AssetForm({ editData, onClose, displayName, open, onOpenChange }: AssetFormProps) {
+export function AssetForm({
+  houseId,
+  editData,
+  onClose,
+  displayName,
+  open,
+  onOpenChange,
+}: AssetFormProps) {
   const [internalOpen, setInternalOpen] = useState(!!editData);
   const [type, setType] = useState<AssetType>(editData?.type || "gold");
   const [amount, setAmount] = useState(editData?.amount.toString() || "");
@@ -32,7 +40,7 @@ export function AssetForm({ editData, onClose, displayName, open, onOpenChange }
 
   // Use external open state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
-  
+
   const setIsOpen = (newOpen: boolean) => {
     if (open !== undefined) {
       onOpenChange?.(newOpen);
@@ -88,9 +96,9 @@ export function AssetForm({ editData, onClose, displayName, open, onOpenChange }
       const selectedDate = new Date();
 
       if (editData) {
-        await updateAssetEntry(editData.id, data, selectedDate);
+        await updateAssetEntry(houseId, editData.id, data, selectedDate);
       } else {
-        await addAssetEntry(data, selectedDate);
+        await addAssetEntry(houseId, data, selectedDate);
       }
 
       handleClose();

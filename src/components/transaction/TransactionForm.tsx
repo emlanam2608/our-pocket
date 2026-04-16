@@ -109,12 +109,11 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
 
     // Validate asset fields if asset-linked
     if (isAssetLinked) {
-      const assetAmount = parseInputNumber(assetAmountDisplay);
-      if (assetAmount <= 0) {
-        return setError(assetType === "gold" ? "Nhập số lượng vàng đi!" : "Nhập số lượng đi!");
-      }
-      if (assetType === "gold" && parseInputNumber(assetCostDisplay) <= 0) {
-        return setError("Nhập giá trị vàng đi!");
+      if (assetType === "gold") {
+        const assetAmount = parseInputNumber(assetAmountDisplay);
+        if (assetAmount <= 0) {
+          return setError("Nhập số lượng vàng đi!");
+        }
       }
       // For funds, validate fund name
       if (assetType === "funds") {
@@ -140,8 +139,7 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
             categoryId,
             description: description.trim(),
             amount,
-            ...(isAssetLinked ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
-            ...(assetType === "gold" ? { assetCost: parseInputNumber(assetCostDisplay) } : {}),
+            ...(isAssetLinked && assetType === "gold" ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
           },
           selectedDate
         );
@@ -157,26 +155,25 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
             amount,
             createdBy: displayName,
             ...(senderToken ? { senderToken } : {}),
-            ...(isAssetLinked ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
-            ...(assetType === "gold" ? { assetCost: parseInputNumber(assetCostDisplay) } : {}),
+            ...(isAssetLinked && assetType === "gold" ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
           },
           selectedDate
         );
 
         // Also create asset entry if asset-linked
         if (isAssetLinked && assetType) {
-          const assetAmount = parseInputNumber(assetAmountDisplay);
           const assetData: any = {
             type: assetType,
-            amount: assetAmount,
             createdBy: displayName,
           };
           if (assetType === "gold") {
-            assetData.cost = parseInputNumber(assetCostDisplay);
+            assetData.amount = parseInputNumber(assetAmountDisplay);
           } else if (assetType === "funds") {
             assetData.fundName = newFundName || fundName;
+            assetData.amount = amount;
             assetData.description = description.trim() || `Thêm ${assetData.fundName}`;
           } else {
+            assetData.amount = amount;
             assetData.description = description.trim() || `Thêm ${assetType}`;
           }
           await addAssetEntry(assetData, selectedDate);
@@ -343,20 +340,7 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">g</span>
                         </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-yellow-400 text-xs uppercase tracking-wider">Giá trị vàng (VND)</Label>
-                        <div className="relative">
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            value={assetCostDisplay}
-                            onChange={(e) => setAssetCostDisplay(e.target.value)}
-                            placeholder="0"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-lg font-semibold pr-8 text-right"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₫</span>
-                        </div>
-                      </div>
+""
                     </>
                   )}
                   {isAssetLinked && assetType !== "gold" && (
@@ -410,29 +394,16 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                           </div>
                         </>
                       )}
-                      <div className="space-y-1.5">
-                        <Label className="text-green-400 text-xs uppercase tracking-wider">Số lượng {assetType === "funds" ? "quỹ" : "tiết kiệm"}</Label>
-                        <div className="relative">
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            value={assetAmountDisplay}
-                            onChange={(e) => setAssetAmountDisplay(e.target.value)}
-                            placeholder="0"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-lg font-semibold pr-8 text-right"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₫</span>
-                        </div>
-                      </div>
+""
                     </div>
                   )}
 
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">Thời gian</Label>
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">Ngày</Label>
                     <Input
-                      type="datetime-local"
-                      value={timestamp}
-                      onChange={(e) => setTimestamp(e.target.value)}
+                      type="date"
+                      value={timestamp.split("T")[0]}
+                      onChange={(e) => setTimestamp(e.target.value + "T12:00")}
                       className="bg-white/5 border-white/10 text-white h-11 [color-scheme:dark]"
                     />
                   </div>

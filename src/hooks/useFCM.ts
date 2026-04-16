@@ -5,7 +5,8 @@ import { getToken, onMessage, Unsubscribe } from "firebase/messaging";
 import { getMessagingInstance } from "@/lib/firebase/client";
 
 export function useFCM() {
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -15,7 +16,8 @@ export function useFCM() {
   }, []);
 
   const requestPermission = useCallback(async () => {
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    if (typeof window === "undefined" || !("serviceWorker" in navigator))
+      return;
 
     try {
       const registration = await navigator.serviceWorker.register("/sw.js", {
@@ -30,7 +32,8 @@ export function useFCM() {
 
       if (status === "granted") {
         // Clean up old push subscriptions before getting new token
-        const oldSubscription = await registration.pushManager.getSubscription();
+        const oldSubscription =
+          await registration.pushManager.getSubscription();
         if (oldSubscription) {
           console.log("Unsubscribing from old push subscription");
           await oldSubscription.unsubscribe();
@@ -45,13 +48,13 @@ export function useFCM() {
           // Always update sessionStorage to track current token
           const previousToken = sessionStorage.getItem("fcm-token");
           sessionStorage.setItem("fcm-token", token);
-          
+
           // Skip registration if token hasn't changed (prevents duplicate registrations)
           if (previousToken === token) {
             console.log("FCM Token unchanged, skipping duplicate registration");
             return;
           }
-          
+
           const ua = navigator.userAgent;
           let deviceType = "Desktop";
           if (/iPhone|iPad|iPod/.test(ua)) deviceType = "iOS Device";
@@ -82,7 +85,11 @@ export function useFCM() {
 
   // Try to auto-init if already granted - but only once per session
   useEffect(() => {
-    if (!initialized && typeof window !== "undefined" && Notification.permission === "granted") {
+    if (
+      !initialized &&
+      typeof window !== "undefined" &&
+      Notification.permission === "granted"
+    ) {
       setInitialized(true);
       requestPermission();
     }
@@ -95,7 +102,7 @@ export function useFCM() {
     const setupListener = async () => {
       const messaging = await getMessagingInstance();
       if (!messaging) return;
-      
+
       unsubscribe = onMessage(messaging, (payload) => {
         console.log("Foreground message received:", payload);
       });
@@ -111,17 +118,22 @@ export function useFCM() {
   // Cleanup: Unregister old service workers to prevent duplicates
   useEffect(() => {
     const cleanupOldServiceWorkers = async () => {
-      if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+      if (typeof window === "undefined" || !("serviceWorker" in navigator))
+        return;
 
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
         // Keep only the latest registration, unregister older ones
         if (registrations.length > 1) {
-          console.log(`Found ${registrations.length} service worker registrations, cleaning up old ones`);
+          console.log(
+            `Found ${registrations.length} service worker registrations, cleaning up old ones`,
+          );
           for (let i = 0; i < registrations.length - 1; i++) {
             const success = await registrations[i].unregister();
             if (success) {
-              console.log(`Unregistered old service worker: ${registrations[i].scope}`);
+              console.log(
+                `Unregistered old service worker: ${registrations[i].scope}`,
+              );
             }
           }
         }

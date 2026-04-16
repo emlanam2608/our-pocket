@@ -25,7 +25,7 @@ export function SummaryCards({ transactions, loading }: SummaryCardsProps) {
       else acc.expense += amount;
       return acc;
     },
-    { income: 0, expense: 0 }
+    { income: 0, expense: 0 },
   );
 
   const balance = totals.income - totals.expense;
@@ -70,13 +70,15 @@ export function SummaryCards({ transactions, loading }: SummaryCardsProps) {
         <motion.div
           key={card.title}
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity:mounted ? 1 : 0, y: mounted ? 0 : 20 }}
+          animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 20 }}
           transition={{ delay: idx * 0.1 }}
           className={`relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br ${card.color} shadow-xl shadow-black/20`}
         >
           <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider ${card.textColor} opacity-80 mb-1`}>
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${card.textColor} opacity-80 mb-1`}
+              >
                 {card.title}
               </p>
               <h3 className="text-2xl font-bold text-white tracking-tight">

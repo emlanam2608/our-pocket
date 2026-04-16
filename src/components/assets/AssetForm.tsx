@@ -18,39 +18,45 @@ interface AssetFormProps {
   editData?: AssetEntry | null;
   onClose: () => void;
   displayName: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AssetForm({ editData, onClose, displayName }: AssetFormProps) {
-  const [open, setOpen] = useState(!!editData);
+export function AssetForm({ editData, onClose, displayName, open, onOpenChange }: AssetFormProps) {
+  const [internalOpen, setInternalOpen] = useState(!!editData);
   const [type, setType] = useState<AssetType>(editData?.type || "gold");
   const [amount, setAmount] = useState(editData?.amount.toString() || "");
   const [cost, setCost] = useState(editData?.cost?.toString() || "");
   const [description, setDescription] = useState(editData?.description || "");
-  const [date, setDate] = useState(
-    editData
-      ? editData.timestamp.toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
-  );
   const [loading, setLoading] = useState(false);
+
+  // Use external open state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  
+  const setIsOpen = (newOpen: boolean) => {
+    if (open !== undefined) {
+      onOpenChange?.(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
 
   useEffect(() => {
     if (editData) {
-      setOpen(true);
+      setIsOpen(true);
       setType(editData.type);
       setAmount(editData.amount.toString());
       setCost(editData.cost?.toString() || "");
       setDescription(editData.description || "");
-      setDate(editData.timestamp.toISOString().split("T")[0]);
     }
   }, [editData]);
 
   const handleClose = () => {
-    setOpen(false);
+    setIsOpen(false);
     setType("gold");
     setAmount("");
     setCost("");
     setDescription("");
-    setDate(new Date().toISOString().split("T")[0]);
     onClose();
   };
 
@@ -79,7 +85,7 @@ export function AssetForm({ editData, onClose, displayName }: AssetFormProps) {
         }
       }
 
-      const selectedDate = new Date(date);
+      const selectedDate = new Date();
 
       if (editData) {
         await updateAssetEntry(editData.id, data, selectedDate);
@@ -98,21 +104,9 @@ export function AssetForm({ editData, onClose, displayName }: AssetFormProps) {
 
   return (
     <>
-      {/* Floating Button */}
-      {!editData && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          onClick={() => setOpen(true)}
-          className="fixed bottom-32 right-4 z-40 w-14 h-14 rounded-full bg-linear-to-r from-violet-600 to-purple-600 shadow-xl shadow-purple-900/30 text-white flex items-center justify-center hover:scale-110 transition-transform"
-        >
-          <Plus className="w-6 h-6" />
-        </motion.button>
-      )}
-
       {/* Modal */}
       <AnimatePresence>
-        {open && (
+        {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -214,19 +208,6 @@ export function AssetForm({ editData, onClose, displayName }: AssetFormProps) {
                     />
                   </div>
                 )}
-
-                {/* Date */}
-                <div>
-                  <Label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
-                    Ngày
-                  </Label>
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="bg-white/3 border-white/10"
-                  />
-                </div>
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4">

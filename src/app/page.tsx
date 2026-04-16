@@ -40,6 +40,7 @@ export default function HomePage() {
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
+  const [assetFormOpen, setAssetFormOpen] = useState(false);
   const mounted = typeof window !== "undefined";
   const [displayName, setDisplayName] = useState(() => {
     if (typeof window !== "undefined") {
@@ -333,6 +334,7 @@ export default function HomePage() {
             className="space-y-4"
           >
             <SummaryCards transactions={transactions} loading={loading} />
+            <AssetCards assets={assets} loading={assetsLoading} />
             <ExpenseChart transactions={transactions} loading={loading} />
           </motion.div>
         ) : activeTab === "transactions" ? (
@@ -354,6 +356,21 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Tài sản của tôi</h2>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setEditingAsset(null);
+                  setAssetFormOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Thêm tài sản
+              </motion.button>
+            </div>
             <FundsList
               assets={assets}
               loading={assetsLoading}
@@ -381,8 +398,13 @@ export default function HomePage() {
       {activeTab === "assets" && (
         <AssetForm
           editData={editingAsset}
-          onClose={() => setEditingAsset(null)}
+          onClose={() => {
+            setEditingAsset(null);
+            setAssetFormOpen(false);
+          }}
           displayName={displayName}
+          open={assetFormOpen}
+          onOpenChange={setAssetFormOpen}
         />
       )}
     </div>

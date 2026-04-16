@@ -17,6 +17,17 @@ interface AssetCardsProps {
   loading?: boolean;
 }
 
+interface CardData {
+  title: string;
+  amount: number;
+  unit: string;
+  icon: string;
+  color: string;
+  textColor: string;
+  cost?: number;
+  subItems?: Array<{ label: string; amount: number }>;
+}
+
 export function AssetCards({ assets, loading }: AssetCardsProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -30,8 +41,8 @@ export function AssetCards({ assets, loading }: AssetCardsProps) {
 
   if (!mounted || loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {[1, 2].map((i) => (
           <div key={i} className="h-28 rounded-2xl bg-white/5 animate-pulse" />
         ))}
       </div>
@@ -49,35 +60,31 @@ export function AssetCards({ assets, loading }: AssetCardsProps) {
       textColor: "text-yellow-200",
     },
     {
-      title: "Quỹ",
-      amount: fundsSummary.totalAmount,
+      title: "Quỹ & Tiết kiệm",
+      amount: fundsSummary.totalAmount + savingsSummary.totalAmount,
       unit: "₫",
       icon: "💰",
       color: "from-emerald-500 to-teal-600",
       textColor: "text-emerald-200",
-    },
-    {
-      title: "Tiết kiệm",
-      amount: savingsSummary.totalAmount,
-      unit: "₫",
-      icon: "🏦",
-      color: "from-blue-500 to-cyan-600",
-      textColor: "text-blue-200",
+      subItems: [
+        { label: "Quỹ", amount: fundsSummary.totalAmount },
+        { label: "Tiết kiệm", amount: savingsSummary.totalAmount },
+      ],
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
       {cards.map((card, idx) => (
         <motion.div
           key={card.title}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 20 }}
           transition={{ delay: idx * 0.1 }}
-          className={`relative overflow-hidden p-6 rounded-2xl bg-linear-to-br ${card.color} shadow-xl shadow-black/20`}
+          className={`relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br ${card.color} shadow-xl shadow-black/20`}
         >
           <div className="flex items-center justify-between relative z-10">
-            <div>
+            <div className="flex-1">
               <p
                 className={`text-xs font-semibold uppercase tracking-wider ${card.textColor} opacity-80 mb-1`}
               >
@@ -92,6 +99,15 @@ export function AssetCards({ assets, loading }: AssetCardsProps) {
                 <p className="text-xs text-white/70 mt-1">
                   Giá: {formatVND(card.cost)}
                 </p>
+              )}
+              {card.subItems && (
+                <div className="text-xs text-white/60 mt-2 space-y-0.5">
+                  {card.subItems.map((sub) => (
+                    <p key={sub.label}>
+                      {sub.label}: {formatVND(sub.amount)}
+                    </p>
+                  ))}
+                </div>
               )}
             </div>
             <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">

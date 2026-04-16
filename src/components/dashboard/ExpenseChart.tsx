@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   PieChart,
@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  Sector,
 } from "recharts";
 import { formatVND } from "@/lib/utils";
 import { CATEGORIES, CATEGORY_COLORS } from "@/lib/constants";
@@ -20,7 +21,13 @@ interface ExpenseChartProps {
   loading: boolean;
 }
 
-const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{name: string; value: number}> }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number }>;
+}) => {
   if (active && payload && payload.length) {
     return (
       <div className="glass rounded-xl px-4 py-3 text-sm">
@@ -33,6 +40,9 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
 };
 
 export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   const data = useMemo(() => {
     const expenses = transactions.filter((t) => t.type === "expense");
     const grouped: Record<string, number> = {};
@@ -55,7 +65,9 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
   }, [transactions]);
 
   if (loading) {
-    return <Skeleton className="h-56 rounded-2xl skeleton-shimmer bg-white/5" />;
+    return (
+      <Skeleton className="h-56 rounded-2xl skeleton-shimmer bg-white/5" />
+    );
   }
 
   if (data.length === 0) {
@@ -66,16 +78,25 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
     );
   }
 
+  const activeIndex = selectedIndex ?? hoveredIndex;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
-      className="glass rounded-2xl p-4"
+      className="glass rounded-2xl p-4 outline-none focus:outline-none"
     >
-      <p className="text-zinc-300 text-sm font-semibold mb-3 px-1">Chi tiêu theo danh mục</p>
+      <p className="text-zinc-300 text-sm font-semibold mb-3 px-1">
+        Chi tiêu theo danh mục
+      </p>
       <ResponsiveContainer width="100%" height={220}>
-        <PieChart>
+        <PieChart style={{ outline: "none" }}>
+          <defs>
+            <filter id="pie-blur">
+              <feGaussianBlur stdDeviation="1.25" />
+            </filter>
+          </defs>
           <Pie
             data={data}
             cx="50%"
@@ -84,18 +105,81 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
             outerRadius={85}
             paddingAngle={3}
             dataKey="value"
+            stroke="transparent"
+            activeIndex={activeIndex ?? undefined}
+            activeShape={(props: unknown) => {
+              const {
+                cx,
+                cy,
+                innerRadius,
+                outerRadius,
+                startAngle,
+                endAngle,
+                fill,
+              } = props as {
+                cx: number;
+                cy: number;
+                innerRadius: number;
+                outerRadius: number;
+                startAngle: number;
+                endAngle: number;
+                fill: string;
+              };
+              return (
+                <Sector
+                  cx={cx}
+                  cy={cy}
+                  innerRadius={innerRadius}
+                  outerRadius={outerRadius + 8}
+                  startAngle={startAngle}
+                  endAngle={endAngle}
+                  fill={fill}
+                />
+              );
+            }}
+            onMouseEnter={(_, idx) => setHoveredIndex(idx)}
+            onMouseLeave={() => setHoveredIndex(null)}
+            onClick={(_, idx) =>
+              setSelectedIndex((cur) => (cur === idx ? null : idx))
+            }
           >
             {data.map((entry, i) => (
-              <Cell key={i} fill={entry.color} strokeWidth={0} />
+              <Cell
+                key={i}
+                fill={entry.color}
+                stroke="transparent"
+                strokeWidth={0}
+                opacity={activeIndex === null || activeIndex === i ? 1 : 0.25}
+                filter={
+                  activeIndex === null || activeIndex === i
+                    ? undefined
+                    : "url(#pie-blur)"
+                }
+              />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            formatter={(value: string) => (
-              <span className="text-zinc-400 text-xs">{value}</span>
+            formatter={(value: string, _entry: unknown, idx?: number) => (
+              <span
+                className="text-zinc-400 text-xs"
+                style={{
+                  opacity:
+                    activeIndex === null || idx == null || idx === activeIndex
+                      ? 1
+                      : 0.35,
+                }}
+              >
+                {value}
+              </span>
             )}
             iconSize={8}
             iconType="circle"
+            onClick={(_e: unknown, payload: unknown) => {
+              const p = payload as { index?: number };
+              if (typeof p.index !== "number") return;
+              setSelectedIndex((cur) => (cur === p.index ? null : p.index));
+            }}
           />
         </PieChart>
       </ResponsiveContainer>

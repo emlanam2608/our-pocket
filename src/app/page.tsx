@@ -11,6 +11,7 @@ import {
   User,
   Check,
   Boxes,
+  Plus,
 } from "lucide-react";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
@@ -357,7 +358,9 @@ export default function HomePage() {
             className="space-y-4"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Tài sản của tôi</h2>
+              <h2 className="text-lg font-semibold text-white">
+                Tài sản của tôi
+              </h2>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -365,7 +368,7 @@ export default function HomePage() {
                   setEditingAsset(null);
                   setAssetFormOpen(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Thêm tài sản

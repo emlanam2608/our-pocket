@@ -3,19 +3,24 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { Trash2, Edit2 } from "lucide-react";
-import { ASSET_COLORS, type AssetEntry } from "@/lib/constants";
+import { type AssetEntry } from "@/lib/constants";
 import { formatVND } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deleteAssetEntry } from "@/hooks/useAssets";
 
 interface FundsListProps {
-  houseId: string;  // NEW: which house these funds belong to
+  houseId: string; // NEW: which house these funds belong to
   assets: AssetEntry[];
   loading: boolean;
   onEdit: (asset: AssetEntry) => void;
 }
 
-export function FundsList({ houseId, assets, loading, onEdit }: FundsListProps) {
+export function FundsList({
+  houseId,
+  assets,
+  loading,
+  onEdit,
+}: FundsListProps) {
   const handleDelete = async (id: string) => {
     if (confirm("Bạn chắc chắn muốn xóa mục này?")) {
       try {
@@ -66,7 +71,10 @@ export function FundsList({ houseId, assets, loading, onEdit }: FundsListProps) 
       <AnimatePresence>
         {fundNames.map((fundName, idx) => {
           const entries = fundsByName[fundName];
-          const totalAmount = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+          const totalAmount = entries.reduce(
+            (sum, e) => sum + (e.amount || 0),
+            0,
+          );
 
           return (
             <motion.div
@@ -79,7 +87,9 @@ export function FundsList({ houseId, assets, loading, onEdit }: FundsListProps) 
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-white">{fundName}</h3>
-                  <p className="text-xs text-zinc-500">{entries.length} lần thêm</p>
+                  <p className="text-xs text-zinc-500">
+                    {entries.length} lần thêm
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-green-400">
@@ -97,7 +107,8 @@ export function FundsList({ houseId, assets, loading, onEdit }: FundsListProps) 
                   >
                     <div className="flex-1">
                       <p className="text-zinc-400">
-                        {entry.description || format(entry.timestamp, "dd/MM/yyyy HH:mm")}
+                        {entry.description ||
+                          format(entry.timestamp, "dd/MM/yyyy HH:mm")}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

@@ -43,7 +43,7 @@ export default function HomePage() {
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const mounted = typeof window !== "undefined";
-  
+
   // House management - for now use a default house
   const [currentHouseId, setCurrentHouseId] = useState(() => {
     if (typeof window !== "undefined") {

@@ -117,7 +117,7 @@ export async function updateTransaction(
 export async function deleteTransaction(houseId: string, id: string) {
   try {
     console.log("Deleting transaction:", id);
-    return await deleteDoc(doc(db, "houses", houseId, "transactions", id));;
+    return await deleteDoc(doc(db, "houses", houseId, "transactions", id));
   } catch (error) {
     console.error("useTransactions: deleteTransaction error", error);
     throw error;

@@ -28,7 +28,7 @@ import {
 } from "@/hooks/useAssets";
 
 interface TransactionFormProps {
-  houseId: string;  // NEW: which house this form is for
+  houseId: string; // NEW: which house this form is for
   editData?: Transaction | null;
   onClose?: () => void;
   onSuccess?: () => void;

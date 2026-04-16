@@ -3,9 +3,7 @@
     {
       "collectionGroup": "transactions",
       "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
+      "fields": [{ "fieldPath": "timestamp", "order": "DESCENDING" }]
     },
     {
       "collectionGroup": "transactions",
@@ -26,9 +24,7 @@
     {
       "collectionGroup": "assets",
       "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
+      "fields": [{ "fieldPath": "timestamp", "order": "DESCENDING" }]
     },
     {
       "collectionGroup": "assets",

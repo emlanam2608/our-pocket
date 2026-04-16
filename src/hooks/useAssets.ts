@@ -113,13 +113,15 @@ export async function updateAssetEntry(
 
 export function getUniqueFundNames(assets: AssetEntry[]): string[] {
   const fundAssets = assets.filter((e) => e.type === "funds" && e.fundName);
-  const uniqueNames = Array.from(new Set(fundAssets.map((e) => e.fundName as string)));
+  const uniqueNames = Array.from(
+    new Set(fundAssets.map((e) => e.fundName as string)),
+  );
   return uniqueNames.sort();
 }
 
 export async function deleteAssetEntry(houseId: string, id: string) {
   try {
-    return await deleteDoc(doc(db, "houses", houseId, "assets", id));;
+    return await deleteDoc(doc(db, "houses", houseId, "assets", id));
   } catch (error) {
     console.error("useAssets: deleteAssetEntry error", error);
     throw error;

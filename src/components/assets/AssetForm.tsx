@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 interface AssetFormProps {
-  houseId: string;  // NEW: which house this asset is for
+  houseId: string; // NEW: which house this asset is for
   editData?: AssetEntry | null;
   onClose: () => void;
   displayName: string;

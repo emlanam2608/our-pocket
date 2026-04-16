@@ -151,7 +151,9 @@ export const migrateToHouse = https.onCall(
     const { houseId, dryRun } = request.data;
 
     if (!request.auth?.uid) {
-      throw new Error("Unauthenticated: You must be logged in to run migration");
+      throw new Error(
+        "Unauthenticated: You must be logged in to run migration",
+      );
     }
 
     if (!houseId) {

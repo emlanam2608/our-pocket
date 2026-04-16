@@ -172,8 +172,9 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
             iconType="circle"
             onClick={(_e: unknown, payload: unknown) => {
               const p = payload as { index?: number };
-              if (typeof p.index !== "number") return;
-              setSelectedIndex((cur) => (cur === p.index ? null : p.index));
+              const index = p.index;
+              if (typeof index !== "number") return;
+              setSelectedIndex((cur) => (cur === index ? null : index));
             }}
           />
         </PieChart>

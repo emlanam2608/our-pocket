@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus } from "lucide-react";
+import { X } from "lucide-react";
 import {
   AssetEntry,
   AssetType,
@@ -22,7 +22,13 @@ interface AssetFormProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function AssetForm({ editData, onClose, displayName, open, onOpenChange }: AssetFormProps) {
+export function AssetForm({
+  editData,
+  onClose,
+  displayName,
+  open,
+  onOpenChange,
+}: AssetFormProps) {
   const [internalOpen, setInternalOpen] = useState(!!editData);
   const [type, setType] = useState<AssetType>(editData?.type || "gold");
   const [amount, setAmount] = useState(editData?.amount.toString() || "");
@@ -32,7 +38,7 @@ export function AssetForm({ editData, onClose, displayName, open, onOpenChange }
 
   // Use external open state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
-  
+
   const setIsOpen = (newOpen: boolean) => {
     if (open !== undefined) {
       onOpenChange?.(newOpen);
@@ -43,13 +49,17 @@ export function AssetForm({ editData, onClose, displayName, open, onOpenChange }
 
   useEffect(() => {
     if (editData) {
-      setIsOpen(true);
+      if (open !== undefined) {
+        onOpenChange?.(true);
+      } else {
+        setInternalOpen(true);
+      }
       setType(editData.type);
       setAmount(editData.amount.toString());
       setCost(editData.cost?.toString() || "");
       setDescription(editData.description || "");
     }
-  }, [editData]);
+  }, [editData, open, onOpenChange]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -76,7 +86,7 @@ export function AssetForm({ editData, onClose, displayName, open, onOpenChange }
         amount: amountNum,
         description,
         createdBy: displayName,
-      } as any;
+      } as Omit<AssetEntry, "id" | "timestamp">;
 
       if (type === "gold" && cost) {
         const costNum = parseFloat(cost);
@@ -153,7 +163,7 @@ export function AssetForm({ editData, onClose, displayName, open, onOpenChange }
                       >
                         <div className="text-2xl mb-1">{ASSET_ICONS[t]}</div>
                         <p className="text-xs font-medium text-white">
-                          {ASSET_LABELS[t].split(" ")[1]}
+                          {ASSET_LABELS[t].split(" ").slice(0, -1).join(" ")}
                         </p>
                       </button>
                     ))}

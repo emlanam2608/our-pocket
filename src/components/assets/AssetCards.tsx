@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Wallet, PiggyBank } from "lucide-react";
 import { formatVND } from "@/lib/utils";
-import {
-  AssetEntry,
-  ASSET_COLORS,
-  ASSET_ICONS,
-  ASSET_LABELS,
-} from "@/lib/constants";
+import { AssetEntry } from "@/lib/constants";
 import { getAssetSummary } from "@/hooks/useAssets";
 
 interface AssetCardsProps {
@@ -17,23 +11,8 @@ interface AssetCardsProps {
   loading?: boolean;
 }
 
-interface CardData {
-  title: string;
-  amount: number;
-  unit: string;
-  icon: string;
-  color: string;
-  textColor: string;
-  cost?: number;
-  subItems?: Array<{ label: string; amount: number }>;
-}
-
 export function AssetCards({ assets, loading }: AssetCardsProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [mounted] = useState(true);
 
   const goldSummary = getAssetSummary(assets, "gold");
   const fundsSummary = getAssetSummary(assets, "funds");
@@ -81,7 +60,7 @@ export function AssetCards({ assets, loading }: AssetCardsProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 20 }}
           transition={{ delay: idx * 0.1 }}
-          className={`relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br ${card.color} shadow-xl shadow-black/20`}
+          className={`relative overflow-hidden p-6 rounded-2xl bg-linear-to-br ${card.color} shadow-xl shadow-black/20`}
         >
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">

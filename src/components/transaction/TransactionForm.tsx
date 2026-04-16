@@ -14,10 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIES, type Transaction } from "@/lib/constants";
+import { CATEGORIES, type Transaction, type AssetEntry } from "@/lib/constants";
 import { formatInputNumber, parseInputNumber } from "@/lib/utils";
-import { addTransaction, updateTransaction, deleteTransaction } from "@/hooks/useTransactions";
-import { addAssetEntry, useAssets, getUniqueFundNames } from "@/hooks/useAssets";
+import {
+  addTransaction,
+  updateTransaction,
+  deleteTransaction,
+} from "@/hooks/useTransactions";
+import {
+  addAssetEntry,
+  useAssets,
+  getUniqueFundNames,
+} from "@/hooks/useAssets";
 
 interface TransactionFormProps {
   editData?: Transaction | null;
@@ -25,17 +33,22 @@ interface TransactionFormProps {
   onSuccess?: () => void;
 }
 
-export function TransactionForm({ editData, onClose, onSuccess }: TransactionFormProps) {
+export function TransactionForm({
+  editData,
+  onClose,
+  onSuccess,
+}: TransactionFormProps) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"expense" | "income">("expense");
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [amountDisplay, setAmountDisplay] = useState("");
   const [assetAmountDisplay, setAssetAmountDisplay] = useState("");
-  const [assetCostDisplay, setAssetCostDisplay] = useState("");
   const [fundName, setFundName] = useState("");
   const [newFundName, setNewFundName] = useState("");
-  const [timestamp, setTimestamp] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+  const [timestamp, setTimestamp] = useState(
+    format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+  );
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState("");
@@ -46,9 +59,11 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
 
   // Get selected category
   const selectedCategory = CATEGORIES.find((c) => c.id === categoryId);
-  const isAssetLinked = selectedCategory && "assetType" in selectedCategory && selectedCategory.assetType;
+  const isAssetLinked =
+    selectedCategory &&
+    "assetType" in selectedCategory &&
+    selectedCategory.assetType;
   const assetType = isAssetLinked ? selectedCategory.assetType : null;
-  const isFundsCategory = categoryId === "add_funds";
 
   // Sync with editData
   useEffect(() => {
@@ -57,8 +72,12 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
       setCategoryId(editData.categoryId);
       setDescription(editData.description || "");
       setAmountDisplay(formatInputNumber(String(editData.amount)));
-      setAssetAmountDisplay(editData.assetAmount ? formatInputNumber(String(editData.assetAmount)) : "");
-      setAssetCostDisplay(editData.assetCost ? formatInputNumber(String(editData.assetCost)) : "");
+      setAssetAmountDisplay(
+        editData.assetAmount
+          ? formatInputNumber(String(editData.assetAmount))
+          : "",
+      );
+
       setTimestamp(format(editData.timestamp, "yyyy-MM-dd'T'HH:mm"));
       setOpen(true);
     }
@@ -73,7 +92,6 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
     setDescription("");
     setAmountDisplay("");
     setAssetAmountDisplay("");
-    setAssetCostDisplay("");
     setFundName("");
     setNewFundName("");
     setTimestamp(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
@@ -89,11 +107,7 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
   const amountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     const formatted = formatInputNumber(val);
-    
-    // Manage cursor position to avoid jumping to the end
-    const cursor = e.target.selectionStart;
-    const oldLen = val.length;
-    
+
     setAmountDisplay(formatted);
 
     // After state update, input will re-render and cursor might jump.
@@ -127,7 +141,8 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
     setLoading(true);
     setError("");
     try {
-      const displayName = localStorage.getItem("nhaminh-displayname") ?? "Ai đó";
+      const displayName =
+        localStorage.getItem("nhaminh-displayname") ?? "Ai đó";
       const selectedDate = new Date(timestamp);
 
       if (editData) {
@@ -139,9 +154,11 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
             categoryId,
             description: description.trim(),
             amount,
-            ...(isAssetLinked && assetType === "gold" ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
+            ...(isAssetLinked && assetType === "gold"
+              ? { assetAmount: parseInputNumber(assetAmountDisplay) }
+              : {}),
           },
-          selectedDate
+          selectedDate,
         );
       } else {
         // CREATE
@@ -155,23 +172,28 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
             amount,
             createdBy: displayName,
             ...(senderToken ? { senderToken } : {}),
-            ...(isAssetLinked && assetType === "gold" ? { assetAmount: parseInputNumber(assetAmountDisplay) } : {}),
+            ...(isAssetLinked && assetType === "gold"
+              ? { assetAmount: parseInputNumber(assetAmountDisplay) }
+              : {}),
           },
-          selectedDate
+          selectedDate,
         );
 
         // Also create asset entry if asset-linked
         if (isAssetLinked && assetType) {
-          const assetData: any = {
+          const assetData = {
             type: assetType,
             createdBy: displayName,
-          };
+            amount: 0,
+          } as Omit<AssetEntry, "id" | "timestamp">;
+          
           if (assetType === "gold") {
             assetData.amount = parseInputNumber(assetAmountDisplay);
           } else if (assetType === "funds") {
             assetData.fundName = newFundName || fundName;
             assetData.amount = amount;
-            assetData.description = description.trim() || `Thêm ${assetData.fundName}`;
+            assetData.description =
+              description.trim() || `Thêm ${assetData.fundName}`;
           } else {
             assetData.amount = amount;
             assetData.description = description.trim() || `Thêm ${assetType}`;
@@ -184,7 +206,11 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
       onSuccess?.();
     } catch (err) {
       console.error("Transaction Error:", err);
-      setError(err instanceof Error ? err.message : "Lỗi xử lý giao dịch, thử lại nhé!");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Lỗi xử lý giao dịch, thử lại nhé!",
+      );
     } finally {
       setLoading(false);
     }
@@ -212,7 +238,7 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-2xl shadow-purple-900/60"
+        className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-linear-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-2xl shadow-purple-900/60"
       >
         <Plus className="w-7 h-7 text-white" />
       </motion.button>
@@ -250,7 +276,11 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                         disabled={deleteLoading}
                         className="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 hover:bg-rose-500/20 transition-colors"
                       >
-                        {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        {deleteLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     )}
                     <button
@@ -268,10 +298,15 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                       <button
                         key={t}
                         type="button"
-                        onClick={() => { setType(t); setCategoryId(""); }}
+                        onClick={() => {
+                          setType(t);
+                          setCategoryId("");
+                        }}
                         className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                           type === t
-                            ? t === "expense" ? "bg-rose-500/80 text-white shadow" : "bg-emerald-500/80 text-white shadow"
+                            ? t === "expense"
+                              ? "bg-rose-500/80 text-white shadow"
+                              : "bg-emerald-500/80 text-white shadow"
                             : "text-zinc-500 hover:text-zinc-300"
                         }`}
                       >
@@ -281,14 +316,20 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">Danh mục</Label>
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">
+                      Danh mục
+                    </Label>
                     <Select value={categoryId} onValueChange={setCategoryId}>
                       <SelectTrigger className="bg-white/5 border-white/10 text-white h-11">
                         <SelectValue placeholder="Chọn danh mục..." />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-800 border-white/10">
                         {filteredCats.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id} className="text-white hover:bg-white/10">
+                          <SelectItem
+                            key={cat.id}
+                            value={cat.id}
+                            className="text-white hover:bg-white/10"
+                          >
                             {cat.label}
                           </SelectItem>
                         ))}
@@ -297,7 +338,9 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">Số tiền (VND)</Label>
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">
+                      Số tiền (VND)
+                    </Label>
                     <div className="relative">
                       <Input
                         type="text"
@@ -307,12 +350,16 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                         placeholder="0"
                         className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-xl font-bold pr-16 text-right"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₫</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                        ₫
+                      </span>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">Mô tả (tùy chọn)</Label>
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">
+                      Mô tả (tùy chọn)
+                    </Label>
                     <Input
                       type="text"
                       value={description}
@@ -327,20 +374,25 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                   {isAssetLinked && assetType === "gold" && (
                     <>
                       <div className="space-y-1.5 pt-2 border-t border-white/10">
-                        <Label className="text-yellow-400 text-xs uppercase tracking-wider">Số lượng vàng (grams)</Label>
+                        <Label className="text-yellow-400 text-xs uppercase tracking-wider">
+                          Số lượng vàng (grams)
+                        </Label>
                         <div className="relative">
                           <Input
                             type="text"
                             inputMode="decimal"
                             value={assetAmountDisplay}
-                            onChange={(e) => setAssetAmountDisplay(e.target.value)}
+                            onChange={(e) =>
+                              setAssetAmountDisplay(e.target.value)
+                            }
                             placeholder="0.00"
                             className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600 h-12 text-lg font-semibold pr-8 text-right"
                           />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">g</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                            g
+                          </span>
                         </div>
                       </div>
-""
                     </>
                   )}
                   {isAssetLinked && assetType !== "gold" && (
@@ -348,15 +400,24 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                       {assetType === "funds" && (
                         <>
                           <div className="space-y-1.5">
-                            <Label className="text-green-400 text-xs uppercase tracking-wider">Chọn quỹ</Label>
+                            <Label className="text-green-400 text-xs uppercase tracking-wider">
+                              Chọn quỹ
+                            </Label>
                             {fundNames.length > 0 && !newFundName && (
-                              <Select value={fundName} onValueChange={setFundName}>
+                              <Select
+                                value={fundName}
+                                onValueChange={setFundName}
+                              >
                                 <SelectTrigger className="bg-white/5 border-white/10 text-white h-11">
                                   <SelectValue placeholder="Chọn quỹ hiện có..." />
                                 </SelectTrigger>
                                 <SelectContent className="bg-zinc-800 border-white/10">
                                   {fundNames.map((name) => (
-                                    <SelectItem key={name} value={name} className="text-white hover:bg-white/10">
+                                    <SelectItem
+                                      key={name}
+                                      value={name}
+                                      className="text-white hover:bg-white/10"
+                                    >
                                       {name}
                                     </SelectItem>
                                   ))}
@@ -364,11 +425,15 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                               </Select>
                             )}
                             {fundNames.length > 0 && !newFundName && (
-                              <p className="text-xs text-zinc-500 text-center">hoặc</p>
+                              <p className="text-xs text-zinc-500 text-center">
+                                hoặc
+                              </p>
                             )}
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-green-400 text-xs uppercase tracking-wider">Tạo quỹ mới</Label>
+                            <Label className="text-green-400 text-xs uppercase tracking-wider">
+                              Tạo quỹ mới
+                            </Label>
                             <div className="flex gap-2">
                               <Input
                                 type="text"
@@ -394,28 +459,33 @@ export function TransactionForm({ editData, onClose, onSuccess }: TransactionFor
                           </div>
                         </>
                       )}
-""
                     </div>
                   )}
 
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">Ngày</Label>
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider">
+                      Ngày
+                    </Label>
                     <Input
                       type="date"
                       value={timestamp.split("T")[0]}
                       onChange={(e) => setTimestamp(e.target.value + "T12:00")}
-                      className="bg-white/5 border-white/10 text-white h-11 [color-scheme:dark]"
+                      className="bg-white/5 border-white/10 text-white h-11 scheme-dark"
                     />
                   </div>
 
-                  {error && <p className="text-rose-400 text-sm text-center">{error}</p>}
+                  {error && (
+                    <p className="text-rose-400 text-sm text-center">{error}</p>
+                  )}
 
                   <Button
                     type="submit"
                     disabled={loading || deleteLoading}
-                    className="w-full h-12 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-900/30 mt-2"
+                    className="w-full h-12 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-900/30 mt-2"
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : null}
                     {editData ? "Cập nhật" : "Lưu giao dịch"}
                   </Button>
                 </form>

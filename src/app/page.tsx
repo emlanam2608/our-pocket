@@ -335,7 +335,6 @@ export default function HomePage() {
             className="space-y-4"
           >
             <SummaryCards transactions={transactions} loading={loading} />
-            <AssetCards assets={assets} loading={assetsLoading} />
             <ExpenseChart transactions={transactions} loading={loading} />
           </motion.div>
         ) : activeTab === "transactions" ? (
@@ -357,32 +356,54 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                Tài sản của tôi
-              </h2>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  setEditingAsset(null);
-                  setAssetFormOpen(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Thêm tài sản
-              </motion.button>
+            {/* Asset Summary Cards */}
+            <AssetCards assets={assets} loading={assetsLoading} />
+
+            {/* Funds Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                  Quỹ
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setEditingAsset(null);
+                    setAssetFormOpen(true);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1 bg-purple-600/50 hover:bg-purple-600/70 text-white text-xs font-medium rounded-lg transition-all"
+                >
+                  <Plus className="w-3 h-3" />
+                  Tạo quỹ
+                </motion.button>
+              </div>
+              <FundsList
+                assets={assets}
+                loading={assetsLoading}
+                onEdit={setEditingAsset}
+              />
             </div>
-            <FundsList
-              assets={assets}
-              loading={assetsLoading}
-              onEdit={setEditingAsset}
-            />
+
+            {/* All Assets Section */}
             <div className="pt-2 border-t border-white/10">
-              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">
-                Toàn bộ tài sản
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                  Toàn bộ tài sản
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setEditingAsset(null);
+                    setAssetFormOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Thêm tài sản
+                </motion.button>
+              </div>
               <AssetsList
                 assets={assets}
                 loading={assetsLoading}

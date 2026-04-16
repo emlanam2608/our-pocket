@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { formatVND } from "@/lib/utils";
@@ -12,11 +12,7 @@ interface SummaryCardsProps {
 }
 
 export function SummaryCards({ transactions, loading }: SummaryCardsProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [mounted] = useState(true);
 
   const totals = transactions.reduce(
     (acc, t) => {
@@ -72,7 +68,7 @@ export function SummaryCards({ transactions, loading }: SummaryCardsProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 20 }}
           transition={{ delay: idx * 0.1 }}
-          className={`relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br ${card.color} shadow-xl shadow-black/20`}
+          className={`relative overflow-hidden p-6 rounded-2xl bg-linear-to-br ${card.color} shadow-xl shadow-black/20`}
         >
           <div className="flex items-center justify-between relative z-10">
             <div>

@@ -17,8 +17,8 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
 import { AssetCards } from "@/components/assets/AssetCards";
-import { AssetsList } from "@/components/assets/AssetsList";
 import { FundsList } from "@/components/assets/FundsList";
+import { FundDetailModal } from "@/components/assets/FundDetailModal";
 import { AssetForm } from "@/components/assets/AssetForm";
 import { TransactionList } from "@/components/transaction/TransactionList";
 import { TransactionForm } from "@/components/transaction/TransactionForm";
@@ -42,6 +42,9 @@ export default function HomePage() {
     useState<Transaction | null>(null);
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
   const [assetFormOpen, setAssetFormOpen] = useState(false);
+  const [fundFormOpen, setFundFormOpen] = useState(false);
+  const [selectedFundName, setSelectedFundName] = useState<string | null>(null);
+  const [fundDetailOpen, setFundDetailOpen] = useState(false);
   const mounted = typeof window !== "undefined";
   const [displayName, setDisplayName] = useState(() => {
     if (typeof window !== "undefined") {
@@ -112,6 +115,16 @@ export default function HomePage() {
   } = useTransactions(dateRange.start, dateRange.end);
 
   const { assets, loading: assetsLoading } = useAssets();
+
+  const fundOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const a of assets) {
+      if (a.type !== "funds") continue;
+      const n = (a.fundName || "").trim();
+      if (n) names.add(n);
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [assets]);
 
   // Get unique persons and filter transactions
   const uniquePersons = useMemo(() => {
@@ -193,7 +206,7 @@ export default function HomePage() {
       <motion.header
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-30 glass safe-top px-4 pt-4 pb-3"
+        className="sticky top-0 z-30 safe-top px-4 pt-4 pb-3 bg-[#09090b]/90 backdrop-blur-md border-b border-white/10"
       >
         {/* Global Loading Bar */}
         <AnimatePresence>
@@ -356,11 +369,27 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
+            {/* Base Amount Update */}
+            <div className="flex justify-end">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setEditingAsset(null);
+                  setAssetFormOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Cập nhật số dư gốc
+              </motion.button>
+            </div>
+
             {/* Asset Summary Cards */}
             <AssetCards assets={assets} loading={assetsLoading} />
 
             {/* Funds Section */}
-            <div>
+            <div className="pt-2 border-t border-white/10">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
                   Quỹ
@@ -370,44 +399,21 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setEditingAsset(null);
-                    setAssetFormOpen(true);
+                    setFundFormOpen(true);
                   }}
-                  className="flex items-center gap-1 px-3 py-1 bg-purple-600/50 hover:bg-purple-600/70 text-white text-xs font-medium rounded-lg transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-4 h-4" />
                   Tạo quỹ
                 </motion.button>
               </div>
               <FundsList
                 assets={assets}
                 loading={assetsLoading}
-                onEdit={setEditingAsset}
-              />
-            </div>
-
-            {/* All Assets Section */}
-            <div className="pt-2 border-t border-white/10">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                  Toàn bộ tài sản
-                </p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setEditingAsset(null);
-                    setAssetFormOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm tài sản
-                </motion.button>
-              </div>
-              <AssetsList
-                assets={assets}
-                loading={assetsLoading}
-                onEdit={setEditingAsset}
+                onSelectFund={(fundName) => {
+                  setSelectedFundName(fundName);
+                  setFundDetailOpen(true);
+                }}
               />
             </div>
           </motion.div>
@@ -420,16 +426,45 @@ export default function HomePage() {
       />
 
       {activeTab === "assets" && (
-        <AssetForm
-          editData={editingAsset}
-          onClose={() => {
-            setEditingAsset(null);
-            setAssetFormOpen(false);
-          }}
-          displayName={displayName}
-          open={assetFormOpen}
-          onOpenChange={setAssetFormOpen}
-        />
+        <>
+          {/* Asset Form */}
+          <AssetForm
+            editData={editingAsset}
+            onClose={() => {
+              setEditingAsset(null);
+              setAssetFormOpen(false);
+            }}
+            displayName={displayName}
+            open={assetFormOpen}
+            onOpenChange={setAssetFormOpen}
+            mode="asset"
+            fundOptions={fundOptions}
+          />
+
+          {/* Fund Form */}
+          <AssetForm
+            editData={editingAsset?.type === "funds" ? editingAsset : null}
+            onClose={() => {
+              setEditingAsset(null);
+              setFundFormOpen(false);
+            }}
+            displayName={displayName}
+            open={fundFormOpen}
+            onOpenChange={setFundFormOpen}
+            mode="fund"
+            fundOptions={fundOptions}
+          />
+
+          <FundDetailModal
+            assets={assets}
+            fundName={selectedFundName}
+            open={fundDetailOpen}
+            onOpenChange={(o) => {
+              setFundDetailOpen(o);
+              if (!o) setSelectedFundName(null);
+            }}
+          />
+        </>
       )}
     </div>
   );

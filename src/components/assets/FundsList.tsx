@@ -2,30 +2,17 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import { Trash2, Edit2 } from "lucide-react";
-import { ASSET_COLORS, type AssetEntry } from "@/lib/constants";
+import type { AssetEntry } from "@/lib/constants";
 import { formatVND } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { deleteAssetEntry } from "@/hooks/useAssets";
 
 interface FundsListProps {
   assets: AssetEntry[];
   loading: boolean;
-  onEdit: (asset: AssetEntry) => void;
+  onSelectFund: (fundName: string) => void;
 }
 
-export function FundsList({ assets, loading, onEdit }: FundsListProps) {
-  const handleDelete = async (id: string) => {
-    if (confirm("Bạn chắc chắn muốn xóa mục này?")) {
-      try {
-        await deleteAssetEntry(id);
-      } catch (error) {
-        console.error("Failed to delete fund:", error);
-        alert("Lỗi khi xóa quỹ");
-      }
-    }
-  };
-
+export function FundsList({ assets, loading, onSelectFund }: FundsListProps) {
   if (loading) {
     return (
       <div className="space-y-2">
@@ -73,7 +60,13 @@ export function FundsList({ assets, loading, onEdit }: FundsListProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: idx * 0.05 }}
-              className="glass rounded-2xl p-4 space-y-3"
+              className="glass rounded-2xl p-4 space-y-3 cursor-pointer hover:bg-white/5 transition-colors"
+              onClick={() => onSelectFund(fundName)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onSelectFund(fundName);
+              }}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -103,20 +96,6 @@ export function FundsList({ assets, loading, onEdit }: FundsListProps) {
                       <p className="text-green-400 font-semibold">
                         +{formatVND(entry.amount)}
                       </p>
-                      <button
-                        onClick={() => onEdit(entry)}
-                        className="p-1 rounded-lg text-blue-400 hover:bg-blue-400/10 transition-colors"
-                        title="Sửa"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(entry.id)}
-                        className="p-1 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 ))}

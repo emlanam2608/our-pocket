@@ -25,7 +25,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.keys().hasAll(['type','amount','createdBy','timestamp'])
         && request.resource.data.amount is number
-        && request.resource.data.amount > 0
+        // Allow 0 for fund creation shells and base-amount resets
+        && request.resource.data.amount >= 0
         && request.resource.data.type in ['gold','funds','savings'];
       allow update, delete: if request.auth != null;
     }

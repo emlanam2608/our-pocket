@@ -11,6 +11,9 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDocs,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { AssetEntry, AssetType, AssetSummary } from "@/lib/constants";
@@ -110,6 +113,30 @@ export async function deleteAssetEntry(id: string) {
     return await deleteDoc(doc(db, "assets", id));
   } catch (error) {
     console.error("useAssets: deleteAssetEntry error", error);
+    throw error;
+  }
+}
+
+export async function renameFund(oldName: string, newName: string) {
+  const from = oldName.trim();
+  const to = newName.trim();
+  if (!from || !to) return;
+  if (from === to) return;
+
+  try {
+    const q = query(
+      collection(db, "assets"),
+      where("type", "==", "funds"),
+      where("fundName", "==", from),
+    );
+    const snap = await getDocs(q);
+    const batch = writeBatch(db);
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, { fundName: to });
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error("useAssets: renameFund error", error);
     throw error;
   }
 }

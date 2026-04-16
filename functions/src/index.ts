@@ -7,7 +7,7 @@ admin.initializeApp();
  * Triggered when a new transaction is created.
  * Sends a notification to all registered tokens EXCEPT the sender.
  * 
- * Region: asia-southeast1 (Singapore)
+ * Region: us-central1
  */
 export const onTransactionCreated = onDocumentCreated({
   document: "transactions/{transactionId}",
@@ -68,23 +68,40 @@ export const onTransactionCreated = onDocumentCreated({
 
     // 3. Send notifications
     const response = await admin.messaging().sendEachForMulticast(message);
-    console.log(`Successfully sent ${response.successCount} notifications.`);
+    console.log(`Successfully sent ${response.successCount} notifications. Failed: ${response.failureCount}.`);
 
-    // 4. Cleanup old/invalid tokens
+    // 4. Aggressive cleanup: Delete any invalid tokens
+    const invalidTokens: string[] = [];
     const tasks: Promise<any>[] = [];
+    
     response.responses.forEach((resp, index) => {
       if (!resp.success && resp.error) {
-        console.error("Failure sending notification to", tokens[index], resp.error);
+        const failedToken = tokens[index];
+        console.error(`Failure sending notification to ${failedToken.substring(0, 20)}...`, resp.error.code);
+        
+        // Delete token on any error (invalid, expired, unregistered, etc.)
         if (
           resp.error.code === "messaging/invalid-registration-token" ||
-          resp.error.code === "messaging/registration-token-not-registered"
+          resp.error.code === "messaging/registration-token-not-registered" ||
+          resp.error.code === "messaging/invalid-argument" ||
+          resp.error.code === "messaging/third-party-auth-error" ||
+          resp.error.code === "messaging/authentication-error"
         ) {
-          tasks.push(admin.firestore().collection("fcmTokens").doc(tokens[index]).delete());
+          console.log(`Deleting invalid token: ${failedToken.substring(0, 20)}...`);
+          invalidTokens.push(failedToken);
+          tasks.push(
+            admin.firestore().collection("fcmTokens").doc(failedToken).delete()
+              .catch(err => console.error(`Failed to delete token ${failedToken.substring(0, 20)}...`, err))
+          );
         }
       }
     });
 
     await Promise.all(tasks);
+    
+    if (invalidTokens.length > 0) {
+      console.log(`Cleaned up ${invalidTokens.length} invalid tokens`);
+    }
   } catch (error) {
     console.error("Error sending notifications:", error);
   }

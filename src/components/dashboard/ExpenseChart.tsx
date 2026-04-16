@@ -106,17 +106,9 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
             paddingAngle={3}
             dataKey="value"
             stroke="transparent"
-            activeIndex={activeIndex ?? undefined}
-            activeShape={(props: unknown) => {
-              const {
-                cx,
-                cy,
-                innerRadius,
-                outerRadius,
-                startAngle,
-                endAngle,
-                fill,
-              } = props as {
+            rootTabIndex={-1}
+            shape={(props: unknown) => {
+              const p = props as {
                 cx: number;
                 cy: number;
                 innerRadius: number;
@@ -124,16 +116,25 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
                 startAngle: number;
                 endAngle: number;
                 fill: string;
+                index?: number;
               };
+
+              const idx = typeof p.index === "number" ? p.index : -1;
+              const dim = activeIndex !== null && idx !== activeIndex;
+              const active = activeIndex !== null && idx === activeIndex;
+
               return (
                 <Sector
-                  cx={cx}
-                  cy={cy}
-                  innerRadius={innerRadius}
-                  outerRadius={outerRadius + 8}
-                  startAngle={startAngle}
-                  endAngle={endAngle}
-                  fill={fill}
+                  cx={p.cx}
+                  cy={p.cy}
+                  innerRadius={p.innerRadius}
+                  outerRadius={p.outerRadius + (active ? 8 : 0)}
+                  startAngle={p.startAngle}
+                  endAngle={p.endAngle}
+                  fill={p.fill}
+                  opacity={dim ? 0.25 : 1}
+                  filter={dim ? "url(#pie-blur)" : undefined}
+                  stroke="transparent"
                 />
               );
             }}
@@ -149,12 +150,6 @@ export function ExpenseChart({ transactions, loading }: ExpenseChartProps) {
                 fill={entry.color}
                 stroke="transparent"
                 strokeWidth={0}
-                opacity={activeIndex === null || activeIndex === i ? 1 : 0.25}
-                filter={
-                  activeIndex === null || activeIndex === i
-                    ? undefined
-                    : "url(#pie-blur)"
-                }
               />
             ))}
           </Pie>

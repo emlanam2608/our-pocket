@@ -27,7 +27,7 @@ service cloud.firestore {
         && request.resource.data.amount is number
         // Allow 0 for fund creation shells and base-amount resets
         && request.resource.data.amount >= 0
-        && request.resource.data.type in ['gold','funds','savings'];
+        && request.resource.data.type in ['gold','funds'];
       allow update, delete: if request.auth != null;
     }
   }

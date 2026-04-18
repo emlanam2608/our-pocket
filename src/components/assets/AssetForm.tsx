@@ -27,8 +27,9 @@ interface AssetFormProps {
   displayName: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  mode?: "asset" | "fund"; // "asset" for all types, "fund" for funds only
+  mode?: "fund" | "record"; // "fund" for fund creation/rename, "record" for quick add
   fundOptions?: string[];
+  recordType?: "gold" | "funds"; // for "record" mode
 }
 
 export function AssetForm({
@@ -39,15 +40,17 @@ export function AssetForm({
   onOpenChange,
   mode = "asset",
   fundOptions = [],
+  recordType,
 }: AssetFormProps) {
   const [internalOpen, setInternalOpen] = useState(!!editData);
-  const [type, setType] = useState<AssetType>(editData?.type || (mode === "fund" ? "funds" : "gold"));
   const [amount, setAmount] = useState(editData?.amount?.toString() || "");
+  const [description, setDescription] = useState(editData?.description || "");
   const [fundName, setFundName] = useState(editData?.fundName || "");
   const [loading, setLoading] = useState(false);
 
   // Use external open state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
+  const finalMode = mode || "fund";
 
   const setIsOpen = (newOpen: boolean) => {
     if (open !== undefined) {
@@ -64,16 +67,16 @@ export function AssetForm({
       if (open === undefined) {
         setInternalOpen(true);
       }
-      setType(editData.type);
       setAmount(editData.amount?.toString() || "");
+      setDescription(editData.description || "");
       setFundName(editData.fundName || "");
     }
   }, [editData, open, onOpenChange]);
 
   const handleClose = () => {
     setIsOpen(false);
-    setType(mode === "fund" ? "funds" : "gold");
     setAmount("");
+    setDescription("");
     setFundName("");
     onClose();
   };
@@ -84,72 +87,75 @@ export function AssetForm({
     const trimmedFundName = fundName.trim();
     const normalizedFundName = trimmedFundName.toLocaleLowerCase();
 
-    // In "fund" mode we only create/rename a fund shell; amount is intentionally not entered here.
-    let amountNum = 0;
-    if (mode !== "fund") {
-      amountNum = parseFloat(amount);
-      // Allow 0 (setting base amount to zero).
-      if (amount === "" || isNaN(amountNum) || amountNum < 0) {
-        alert("Vui lòng nhập số dư hợp lệ");
-        return;
-      }
-    } else {
-      if (!trimmedFundName) {
-        alert("Vui lòng nhập tên quỹ");
+    // Handle "record" mode - quick add for gold or funds (allows negative numbers)
+    if (finalMode === "record") {
+      const amountNum = parseFloat(amount);
+      if (amount === "" || isNaN(amountNum) || amountNum === 0) {
+        alert("Vui lòng nhập số lượng hợp lệ");
         return;
       }
 
-      if (!editData) {
-        const existing = fundOptions.some(
-          (n) => n.trim().toLocaleLowerCase() === normalizedFundName,
-        );
-        if (existing) {
-          alert("Quỹ này đã tồn tại. Vui lòng chọn tên khác.");
-          return;
-        }
+      if (!recordType) {
+        alert("Lỗi: loại tài sản không được chỉ định");
+        return;
       }
 
-      amountNum = editData?.amount ?? 0;
-    }
+      if (recordType === "funds" && !trimmedFundName) {
+        alert("Vui lòng chọn quỹ");
+        return;
+      }
 
-    if (mode !== "fund" && type === "funds" && !trimmedFundName) {
-      alert("Vui lòng chọn quỹ");
+      setLoading(true);
+      try {
+        const trimmedDescription = description.trim();
+        const data = {
+          type: recordType,
+          amount: amountNum,
+          createdBy: displayName,
+          ...(trimmedDescription ? { description: trimmedDescription } : {}),
+          ...(trimmedFundName ? { fundName: trimmedFundName } : {}),
+        } as Omit<AssetEntry, "id" | "timestamp">;
+
+        await addAssetEntry(data, new Date());
+        handleClose();
+      } catch (error) {
+        console.error("Failed to save asset:", error);
+        alert("Lỗi khi lưu tài sản");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
-    const label =
-      mode === "fund"
-        ? `quỹ \"${trimmedFundName}\"`
-        : `${ASSET_LABELS[type]}${type === "funds" ? ` (${trimmedFundName})` : ""}`;
+    // Fund mode - create/rename fund
+    if (!trimmedFundName) {
+      alert("Vui lòng nhập tên quỹ");
+      return;
+    }
 
-    const confirmMsg =
-      mode === "fund"
-        ? editData
-          ? `Bạn muốn cập nhật ${label}?`
-          : ""
-        : `Bạn sẽ cập nhật số dư gốc cho ${label}: ${
-            type === "gold" ? `${amountNum}g` : `${amountNum}`
-          }.\nThao tác này sẽ thay đổi số dư hiện tại. Tiếp tục?`;
+    if (!editData) {
+      const existing = fundOptions.some(
+        (n) => n.trim().toLocaleLowerCase() === normalizedFundName,
+      );
+      if (existing) {
+        alert("Quỹ này đã tồn tại. Vui lòng chọn tên khác.");
+        return;
+      }
+    }
+
+    const label = `quỹ \"${trimmedFundName}\"`;
+    const confirmMsg = editData ? `Bạn muốn cập nhật ${label}?` : "";
 
     if (confirmMsg && !confirm(confirmMsg)) return;
 
     setLoading(true);
     try {
       const data = {
-        type: mode === "fund" ? ("funds" as const) : type,
-        amount: amountNum,
-        // Base amount updates shouldn't edit notes; preserve existing description if any.
-        ...(mode !== "fund" && editData?.description
-          ? { description: editData.description }
-          : {}),
+        type: "funds" as const,
+        amount: editData?.amount ?? 0,
         createdBy: displayName,
-        ...(trimmedFundName ? { fundName: trimmedFundName } : {}),
+        fundName: trimmedFundName,
       } as Omit<AssetEntry, "id" | "timestamp">;
-
-      // Gold base updates shouldn't require value input; preserve existing value if any.
-      if (mode !== "fund" && type === "gold" && editData?.cost !== undefined) {
-        data.cost = editData.cost;
-      }
 
       const selectedDate = new Date();
 
@@ -161,8 +167,8 @@ export function AssetForm({
 
       handleClose();
     } catch (error) {
-      console.error("Failed to save asset:", error);
-      alert("Lỗi khi lưu tài sản");
+      console.error("Failed to save fund:", error);
+      alert("Lỗi khi lưu quỹ");
     } finally {
       setLoading(false);
     }
@@ -189,11 +195,11 @@ export function AssetForm({
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-white">
-                  {mode === "fund"
-                    ? editData
+                  {finalMode === "record"
+                    ? `Thêm ${recordType === "gold" ? "vàng" : "quỹ"}`
+                    : editData
                       ? "Cập nhật quỹ"
-                      : "Tạo quỹ"
-                    : "Cập nhật số dư gốc"}
+                      : "Tạo quỹ"}
                 </h2>
                 <button
                   onClick={handleClose}
@@ -205,7 +211,7 @@ export function AssetForm({
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Fund Name (for fund mode) */}
-                {mode === "fund" && (
+                {finalMode === "fund" && (
                   <div>
                     <Label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
                       Tên quỹ
@@ -221,36 +227,10 @@ export function AssetForm({
                   </div>
                 )}
 
-                {/* Type Selector (only for asset mode) */}
-                {mode !== "fund" && (
-                  <div>
-                    <Label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
-                      Loại tài sản
-                    </Label>
-                    <div className="grid grid-cols-3 gap-2">
-                    {(["gold", "funds", "savings"] as AssetType[]).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setType(t)}
-                        className={`p-3 rounded-xl transition-all text-center ${
-                          type === t
-                            ? "bg-purple-600/70 border border-purple-400"
-                            : "bg-white/5 border border-white/10 hover:bg-white/10"
-                        }`}
-                      >
-                        <div className="text-2xl mb-1">{ASSET_ICONS[t]}</div>
-                        <p className="text-xs font-medium text-white">
-                          {ASSET_LABELS[t].split(" ").slice(1).join(" ")}
-                        </p>
-                      </button>
-                    ))}
-                    </div>
-                  </div>
-                )}
 
-                {/* Fund Selector (when adding/updating a fund asset) */}
-                {mode !== "fund" && type === "funds" && (
+
+                {/* Fund Selector (when adding to a fund in record mode) */}
+                {finalMode === "record" && recordType === "funds" && (
                   <div>
                     <Label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
                       Chọn quỹ
@@ -276,27 +256,39 @@ export function AssetForm({
                   </div>
                 )}
 
-                {/* Amount */}
-                {mode !== "fund" && (
+                {/* Amount (for record mode) */}
+                {finalMode === "record" && (
                   <div>
                     <Label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
-                      Số dư gốc {type === "gold" ? "(grams)" : "(₫)"}
+                      {recordType === "gold" ? "Số lượng (cây)" : "Số tiền (₫)"}
                     </Label>
                     <Input
                       type="number"
-                      step={type === "gold" ? "0.01" : "1"}
-                      min="0"
+                      step={recordType === "gold" ? "any" : "1"}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder={type === "gold" ? "10.5" : "100000"}
+                      placeholder={recordType === "gold" ? "10.5 cây hoặc -5 cây" : "100000 hoặc -50000"}
                       className="bg-white/3 border-white/10"
                     />
                   </div>
                 )}
 
-                {/* No value input for gold base updates */}
-
-                {/* No note fields for base amount updates */}
+                {/* Description/Note (for record mode) */}
+                {finalMode === "record" && (
+                  <div>
+                    <Label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2 block ml-1">
+                      Ghi chú (tùy chọn)
+                    </Label>
+                    <Input
+                      type="text"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="VD: Mua từ cửa hàng X"
+                      className="bg-white/3 border-white/10"
+                      maxLength={100}
+                    />
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4">
@@ -315,11 +307,11 @@ export function AssetForm({
                   >
                     {loading
                       ? "Đang lưu..."
-                      : mode === "fund"
-                        ? editData
+                      : finalMode === "record"
+                        ? `Thêm ${recordType === "gold" ? "vàng" : "quỹ"}`
+                        : editData
                           ? "Cập nhật quỹ"
-                          : "Tạo quỹ"
-                        : "Cập nhật số dư gốc"}
+                          : "Tạo quỹ"}
                   </Button>
                 </div>
               </form>

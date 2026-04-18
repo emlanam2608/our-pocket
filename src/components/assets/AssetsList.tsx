@@ -109,7 +109,7 @@ export function AssetsList({ assets, loading, onEdit }: AssetsListProps) {
                   <div className="text-right flex flex-col items-end gap-1 shrink-0">
                     <span className="text-sm font-bold text-white">
                       {a.type === "gold"
-                        ? `+${a.amount.toFixed(2)}g`
+                        ? `+${a.amount.toFixed(2)} cây`
                         : `+${formatVND(a.amount)}`}
                     </span>
                     {a.cost && (

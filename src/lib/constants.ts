@@ -10,7 +10,6 @@ export const CATEGORIES = [
   { id: "other_expense", label: "📦 Khác", icon: "📦", type: "expense" },
   { id: "buy_gold", label: "🏆 Mua vàng", icon: "🏆", type: "expense", assetType: "gold" },
   { id: "add_funds", label: "💰 Thêm quỹ", icon: "💰", type: "expense", assetType: "funds" },
-  { id: "add_savings", label: "🏦 Thêm tiết kiệm", icon: "🏦", type: "expense", assetType: "savings" },
   { id: "salary", label: "💰 Lương", icon: "💰", type: "income" },
   { id: "bonus", label: "🎁 Thưởng", icon: "🎁", type: "income" },
   { id: "freelance", label: "💻 Freelance", icon: "💻", type: "income" },
@@ -31,7 +30,6 @@ export const CATEGORY_COLORS: Record<string, string> = {
   other_expense: "#6b7280",
   buy_gold: "#fbbf24",
   add_funds: "#10b981",
-  add_savings: "#3b82f6",
   salary: "#22c55e",
   bonus: "#eab308",
   freelance: "#06b6d4",
@@ -53,14 +51,14 @@ export interface Transaction {
   assetCost?: number; // For gold purchases, the cost paid
 }
 
-export type AssetType = "gold" | "funds" | "savings";
+export type AssetType = "gold" | "funds";
 
 export interface AssetEntry {
   id: string;
   type: AssetType;
-  amount: number; // grams for gold, currency for funds/savings
+  amount: number; // cây for gold, currency for funds
   cost?: number; // cost in currency for gold entries
-  description?: string; // for funds/savings entries
+  description?: string; // for funds entries
   fundName?: string; // for funds type entries (e.g., "Emergency Fund")
   timestamp: Date;
   createdBy: string;
@@ -77,17 +75,14 @@ export interface AssetSummary {
 export const ASSET_LABELS: Record<AssetType, string> = {
   gold: "🏆 Vàng",
   funds: "💰 Quỹ",
-  savings: "🏦 Tiết kiệm",
 };
 
 export const ASSET_ICONS: Record<AssetType, string> = {
   gold: "🏆",
   funds: "💰",
-  savings: "🏦",
 };
 
 export const ASSET_COLORS: Record<AssetType, string> = {
   gold: "#fbbf24",
   funds: "#10b981",
-  savings: "#3b82f6",
 };

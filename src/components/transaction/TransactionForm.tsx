@@ -375,7 +375,7 @@ export function TransactionForm({
                     <>
                       <div className="space-y-1.5 pt-2 border-t border-white/10">
                         <Label className="text-yellow-400 text-xs uppercase tracking-wider">
-                          Số lượng vàng (grams)
+                          Số lượng vàng (cây)
                         </Label>
                         <div className="relative">
                           <Input

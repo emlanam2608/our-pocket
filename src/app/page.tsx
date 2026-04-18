@@ -41,8 +41,9 @@ export default function HomePage() {
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
-  const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [fundFormOpen, setFundFormOpen] = useState(false);
+  const [quickAddType, setQuickAddType] = useState<"gold" | "funds" | null>(null);
+  const [quickAddFormOpen, setQuickAddFormOpen] = useState(false);
   const [selectedFundName, setSelectedFundName] = useState<string | null>(null);
   const [fundDetailOpen, setFundDetailOpen] = useState(false);
   const mounted = typeof window !== "undefined";
@@ -369,24 +370,15 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
-            {/* Base Amount Update */}
-            <div className="flex justify-end">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  setEditingAsset(null);
-                  setAssetFormOpen(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-900/30 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Cập nhật số dư gốc
-              </motion.button>
-            </div>
-
             {/* Asset Summary Cards */}
-            <AssetCards assets={assets} loading={assetsLoading} />
+            <AssetCards 
+              assets={assets} 
+              loading={assetsLoading}
+              onCardClick={(type) => {
+                setQuickAddType(type);
+                setQuickAddFormOpen(true);
+              }}
+            />
 
             {/* Funds Section */}
             <div className="pt-2 border-t border-white/10">
@@ -427,20 +419,6 @@ export default function HomePage() {
 
       {activeTab === "assets" && (
         <>
-          {/* Asset Form */}
-          <AssetForm
-            editData={editingAsset}
-            onClose={() => {
-              setEditingAsset(null);
-              setAssetFormOpen(false);
-            }}
-            displayName={displayName}
-            open={assetFormOpen}
-            onOpenChange={setAssetFormOpen}
-            mode="asset"
-            fundOptions={fundOptions}
-          />
-
           {/* Fund Form */}
           <AssetForm
             editData={editingAsset?.type === "funds" ? editingAsset : null}
@@ -452,6 +430,20 @@ export default function HomePage() {
             open={fundFormOpen}
             onOpenChange={setFundFormOpen}
             mode="fund"
+            fundOptions={fundOptions}
+          />
+
+          {/* Quick-Add Form (for adding records directly from cards) */}
+          <AssetForm
+            onClose={() => {
+              setQuickAddType(null);
+              setQuickAddFormOpen(false);
+            }}
+            displayName={displayName}
+            open={quickAddFormOpen}
+            onOpenChange={setQuickAddFormOpen}
+            mode="record"
+            recordType={quickAddType as "gold" | "funds"}
             fundOptions={fundOptions}
           />
 

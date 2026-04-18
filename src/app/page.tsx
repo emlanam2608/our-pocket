@@ -42,7 +42,9 @@ export default function HomePage() {
     useState<Transaction | null>(null);
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
   const [fundFormOpen, setFundFormOpen] = useState(false);
-  const [quickAddType, setQuickAddType] = useState<"gold" | "funds" | null>(null);
+  const [quickAddType, setQuickAddType] = useState<"gold" | "funds" | null>(
+    null,
+  );
   const [quickAddFormOpen, setQuickAddFormOpen] = useState(false);
   const [selectedFundName, setSelectedFundName] = useState<string | null>(null);
   const [fundDetailOpen, setFundDetailOpen] = useState(false);
@@ -371,8 +373,8 @@ export default function HomePage() {
             className="space-y-4"
           >
             {/* Asset Summary Cards */}
-            <AssetCards 
-              assets={assets} 
+            <AssetCards
+              assets={assets}
               loading={assetsLoading}
               onCardClick={(type) => {
                 setQuickAddType(type);

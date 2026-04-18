@@ -38,7 +38,7 @@ export function AssetForm({
   displayName,
   open,
   onOpenChange,
-  mode = "asset",
+  mode = "fund",
   fundOptions = [],
   recordType,
 }: AssetFormProps) {
@@ -227,8 +227,6 @@ export function AssetForm({
                   </div>
                 )}
 
-
-
                 {/* Fund Selector (when adding to a fund in record mode) */}
                 {finalMode === "record" && recordType === "funds" && (
                   <div>
@@ -267,7 +265,11 @@ export function AssetForm({
                       step={recordType === "gold" ? "any" : "1"}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder={recordType === "gold" ? "10.5 cây hoặc -5 cây" : "100000 hoặc -50000"}
+                      placeholder={
+                        recordType === "gold"
+                          ? "10.5 cây hoặc -5 cây"
+                          : "100000 hoặc -50000"
+                      }
                       className="bg-white/3 border-white/10"
                     />
                   </div>

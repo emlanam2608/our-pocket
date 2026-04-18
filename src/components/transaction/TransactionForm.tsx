@@ -186,7 +186,7 @@ export function TransactionForm({
             createdBy: displayName,
             amount: 0,
           } as Omit<AssetEntry, "id" | "timestamp">;
-          
+
           if (assetType === "gold") {
             assetData.amount = parseInputNumber(assetAmountDisplay);
           } else if (assetType === "funds") {

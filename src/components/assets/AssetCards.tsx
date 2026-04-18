@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
 import { formatVND } from "@/lib/utils";
 import { AssetEntry, AssetType } from "@/lib/constants";
 import { getAssetSummary } from "@/hooks/useAssets";
@@ -34,7 +33,6 @@ export function AssetCards({ assets, loading, onCardClick }: AssetCardsProps) {
     type: AssetType;
     amount: number;
     unit: string;
-    cost?: number;
     icon: string;
     color: string;
     textColor: string;
@@ -44,7 +42,6 @@ export function AssetCards({ assets, loading, onCardClick }: AssetCardsProps) {
       type: "gold",
       amount: goldSummary.totalAmount,
       unit: "cây",
-      cost: goldSummary.totalCost,
       icon: "🏆",
       color: "from-yellow-500 to-orange-600",
       textColor: "text-yellow-200",
@@ -80,18 +77,12 @@ export function AssetCards({ assets, loading, onCardClick }: AssetCardsProps) {
               </p>
               <h3 className="text-2xl font-bold text-white tracking-tight">
                 {card.unit === "cây"
-                  ? `${card.amount.toFixed(2)} cây`
+                  ? `${card.amount.toFixed(2).replace(/\.?0+$/, "")} cây`
                   : formatVND(card.amount)}
               </h3>
-              {card.cost && (
-                <p className="text-xs text-white/70 mt-1">
-                  Giá: {formatVND(card.cost)}
-                </p>
-              )}
             </div>
-            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md flex items-center gap-2">
+            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">
               <span className="text-3xl">{card.icon}</span>
-              <Plus className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </div>
           {/* Subtle pattern */}
